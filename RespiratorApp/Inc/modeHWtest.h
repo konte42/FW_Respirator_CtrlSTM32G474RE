@@ -13,7 +13,7 @@
 #include "ErrorHandling.h"
 
 //#define PRESSURE_TARGET	(PRESSURE_SPAN*8/10)
-#define PRESSURE_INCREMENT	1
+#define PRESSURE_INCREMENT	0.1// cmH2O
 
 void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control);
 

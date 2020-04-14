@@ -25,18 +25,17 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 	static int8_t dihanje_state = -1;
 	static int16_t timing;
 	
-	#define PRAMP_OFFSET	50
+	#define PRAMP_OFFSET	5	//cmH2O
 	
 	static uint16_t SETinsp_time;
 	static uint16_t SETexp_time;
-	static uint16_t SETpressure;
-	static uint16_t SET_PEEP;
-	static uint16_t MAXpressure;
-	static uint16_t MAXvolume;
+	static float SETpressure;
+	static float SET_PEEP;
+	static float MAXpressure;
+	static float MAXvolume;
 	static uint16_t SETpramp_time;
 	int16_t innertia_offset;
 	static int16_t PreStartBoostTime;
-	int16_t MeasuredPressure = ((int32_t)Measured->pressure * PRESSURE_MAX_MMH2O)/PRESSURE_SPAN;
 	
 	Control->status = dihanje_state;	// shrani stanje dihanja
 	
@@ -104,7 +103,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			Measured->volume_mode = VOLUME_RESET;
 			Control->BreathCounter++;
 			Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET;
-			Control->target_speed = 1000;
+			Control->target_speed = 100;
 			PreStartBoostTime =	23 - SETpramp_time/20;
 			timing=-PreStartBoostTime;
 
@@ -120,7 +119,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			if (timing >= 0)
 			{
 				Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
-				Control->target_pressure = ((int32_t)(SET_PEEP+PRAMP_OFFSET) * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O;
+				Control->target_pressure = SET_PEEP+PRAMP_OFFSET;
 				dihanje_state=MODE_STATE_INSP_PRAMP;
 				SETexp_time = SETexp_time - PreStartBoostTime;
 				timing=0;
@@ -129,7 +128,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			if (MeasuredPressure > SETpressure) 
 			{
 				Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
-				Control->target_pressure = ((int32_t)SETpressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+				Control->target_pressure = SETpressure  - SETinsp_time*PRESSURE_INCREMENT;
 				LED2_On();
 				SETexp_time = SETexp_time - (PreStartBoostTime + timing);
 				timing = 0;
@@ -140,10 +139,10 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 		case MODE_STATE_INSP_PRAMP: //P-ramp
 			LED1_On();
 			timing += TIME_SLICE_MS;
-			Control->target_pressure = ((((SETpressure-SET_PEEP-PRAMP_OFFSET)*(int32_t)timing)/SETpramp_time + SET_PEEP+PRAMP_OFFSET) * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+			Control->target_pressure = (SETpressure-SET_PEEP-PRAMP_OFFSET)/SETpramp_time*timing + SET_PEEP+PRAMP_OFFSET - SETinsp_time*PRESSURE_INCREMENT;
 			if (timing >= SETpramp_time)	// gremo v constant pressure
 			{
-				Control->target_pressure = ((int32_t)SETpressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+				Control->target_pressure = SETpressure - SETinsp_time*PRESSURE_INCREMENT;
 				dihanje_state=MODE_STATE_INSP_CONST_P;
 			}
 		break;
@@ -159,7 +158,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			}
 			//Alternate condition - max volume reached. Should probably issue a warning
 			innertia_offset = 0;//((int32_t)Measured->flow*3)/4;	//ml
-			if (Measured->volume_t > MAXvolume*10 - innertia_offset*10)
+			if (Measured->volume_t > MAXvolume - innertia_offset)
 			{
 				dihanje_state = MODE_STATE_INSP_MAX_VOL;
 			}

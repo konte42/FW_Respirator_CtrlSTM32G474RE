@@ -30,7 +30,7 @@ void MeasureFlow(MeasuredParams_t* Measured)
 	flow_negative = Lookup(*(ADC_Results+ADC_CH_FLOW_N),&Flow_table);
 	if (flow < 0) flow = -flow_negative;
 	if (flow<FLOW_ZERO_TRESHOLD && flow>-FLOW_ZERO_TRESHOLD) flow = 0;
-	Measured->flow=flow;
+	Measured->flow=flow/10.0;
 }
 
 void MeasurePressure(MeasuredParams_t* Measured)
@@ -44,7 +44,7 @@ void MeasurePressure(MeasuredParams_t* Measured)
 	pressure = *(ADC_Results+ADC_CH_PRESSURE) - PRESSURE_MIN;
 	if (pressure<PRESSURE_ZERO_TRESHOLD && pressure>-PRESSURE_ZERO_TRESHOLD) pressure = 0;
 	
-	Measured->pressure=pressure;
+	Measured->pressure=(float)pressure/(float)PRESSURE_SPAN * (float)PRESSURE_MAX_CMH2O;
 }
 
 void MeasureVolume(MeasuredParams_t* Measured)
@@ -56,7 +56,7 @@ void MeasureVolume(MeasuredParams_t* Measured)
 	switch (Measured->volume_mode)
 	{
 		case VOLUME_INTEGRATE:
-			volume += (int32_t)Measured->flow * TIME_SLICE_MS;
+			volume += Measured->flow * TIME_SLICE_MS;
 		break;
 		
 		case VOLUME_RESET:
@@ -79,7 +79,10 @@ void MeasureVolume(MeasuredParams_t* Measured)
 	
 	// flow is in 0.01 l/min, but volume should be in cm3. [0.1 cm3/ms] = 10*1000/(60*1000*100) [0.01 l/min]
 	// result will be in 0.1 cm3 = 0.1 ml
+
+	// TO JE ZDAJ AKTUALNO: flow is in ml/min, volume should be in ml. 1 [ml/ms] = 1/(60*1000) [ml/min]
+	// result will be in 1 cm3 = 1 ml
 	
-	Measured->volume_t=volume/600;
+	Measured->volume_t=volume/60000.0;
 }
 
