@@ -10,6 +10,8 @@
 #include "Measure.h"
 #include "GPIO.h"
 
+#define PRESSURE_INCREMENT	0.1// cmH2O
+
 #define PRESSURE_CTRL_LOOP_THERSHOLD	50
 
 #define MODE_STATE_FIRST_RUN				-1
