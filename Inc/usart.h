@@ -27,16 +27,42 @@
 #include "main.h"
 
 /* USER CODE BEGIN Includes */
+   typedef enum {
+   	UART_EOF	= -1,
+   	UART_OK		= 0
+   } UART_Status_t;
 
+   //   int UART0_SendStr(char str[]);
+   int UART0_SendBytes(char data[], int num);
+   int UART0_DataReady();
+   UART_Status_t UART0_GetByte(char* data);
+   UART_Status_t UART0_put(char data);
+   int UART0_numTxBytes();
+   int UART0_numRxBytes();
+   char UART0_PreviewRxByte(int index);
+
+   #define TB_SIZE0	100
+   extern volatile char TxBuf0[TB_SIZE0];
+   extern int TBin0;
+   extern volatile int TBout0;
+   extern volatile int TBnum0;
+
+   #define RB_SIZE0	100
+   extern volatile char RxBuf0[RB_SIZE0];
+   extern int RBin0;
+   extern volatile int RBout0;
+   extern volatile int RBnum0;
 /* USER CODE END Includes */
 
 extern UART_HandleTypeDef hlpuart1;
+extern UART_HandleTypeDef huart1;
 
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
 
 void MX_LPUART1_UART_Init(void);
+void MX_USART1_UART_Init(void);
 
 /* USER CODE BEGIN Prototypes */
 

@@ -6,14 +6,14 @@ HeaderFiles#1=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Inc/stm3
 HeaderFiles#2=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Inc/main.h
 HeaderFolderListSize=1
 HeaderPath#0=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Inc
-HeaderFiles=;gpio.h;adc.h;hrtim.h;i2c.h;usart.h;spi.h;tim.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32g4xx_it.h;stm32g4xx_hal_conf.h;main.h;
+HeaderFiles=;gpio.h;adc.h;hrtim.h;i2c.h;usart.h;spi.h;tim.h;usb_device.h;usbd_conf.h;usbd_desc.h;usbd_cdc_if.h;stm32g4xx_it.h;stm32g4xx_hal_conf.h;main.h;comp.h;
 SourceFileListSize=3
 SourceFiles#0=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Src/stm32g4xx_it.c
 SourceFiles#1=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Src/stm32g4xx_hal_msp.c
 SourceFiles#2=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Src/main.c
 SourceFolderListSize=1
 SourcePath#0=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Core/Src
-SourceFiles=;gpio.c;adc.c;hrtim.c;i2c.c;usart.c;spi.c;tim.c;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_cdc_if.c;stm32g4xx_it.c;stm32g4xx_hal_msp.c;main.c;
+SourceFiles=;gpio.c;adc.c;hrtim.c;i2c.c;usart.c;spi.c;tim.c;usb_device.c;usbd_conf.c;usbd_desc.c;usbd_cdc_if.c;stm32g4xx_it.c;stm32g4xx_hal_msp.c;main.c;comp.c;
 HeaderPath=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Inc
 SourcePath=D:/Projects/Respirator/FW_Respirator_CtrlSTM32G474RE/Src
 

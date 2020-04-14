@@ -22,8 +22,8 @@ SWB				PD3		D3		PB3		bi šlo kaj drugega? (T_SWO) Npr. Nucleo-PC0?
 Motor driver:
 INB				PD4		D4		PB5		GPIO_OUT
 INA				PD5		D5		PB4		GPIO_OUT
-CURRENT_TRSHLD	PD6		D6		PB10	COMP5_INM
-CS				PD7		D7		PA8		GPIO_OUT
+---CUR_TRSHLD	PD6		D6		PB10	GPIO_IN - Tudi ta bi bil lahko uporabljen za SWB
+---CS			PD7		D7		PA8		GPIO_IN
 SEL0			PB0		D8		PA9		GPIO_OUT
 PWM				PB1		D9		PC7		HRTIM1_CHF2???
 

@@ -84,9 +84,12 @@ int main(void)
   char msg[50];
   int length;
   char com_data;
-  uint32_t mark1=0, mark2=0;
+#ifdef AVR
+  uint32_t mark1=0;
+#endif
+  uint32_t mark2=0;
   uint8_t newSettingsReceived;
-  uint8_t	operationMode=MODE_DEFAULT;
+  uint8_t operationMode=MODE_DEFAULT;
 
   RespSettings_t	Settings;
   MeasuredParams_t Measured;
@@ -151,7 +154,10 @@ int main(void)
   MX_SPI1_Init();
   MX_USB_Device_Init();
   MX_HRTIM1_Init();
-  MX_TIM8_Init();
+  MX_USART1_UART_Init();
+  MX_TIM3_Init();
+  MX_TIM4_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
   motor_Init();
   MeasureInit();
@@ -222,20 +228,22 @@ int main(void)
     }
 #endif
 
-/*
+
     //Report Status to the GUI
-    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
+//    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
+    if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
-	    length=PrepareStatusMessage(GetSysTick(), Measured.flow, Measured.pressure, Measured.volume_t, motor_GetPosition(), motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
-	    UART0_SendBytes(msg,length);
-	    if (timeout > 0 )
-	    {
-		    timeout --;
-	    }
-	    else
-	    {
-		    LED2_Off();
-	    }
+      mark2+=STATUS_REPORTING_PERIOD;
+      length=PrepareStatusMessage(HAL_GetTick(), Measured.flow, Measured.pressure, Measured.volume_t, motor_GetPosition(), motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
+      UART0_SendBytes(msg,length);
+      if (timeout > 0 )
+      {
+	timeout --;
+      }
+      else
+      {
+	LED2_Off();
+      }
     }
     //Listen for commands
 
@@ -254,7 +262,7 @@ int main(void)
 		    timeout=20;
 		    UART0_SendBytes(msg,length);
 	    }
-    }*/
+    }
 
     /* USER CODE END WHILE */
 
@@ -308,9 +316,10 @@ void SystemClock_Config(void)
   }
   /** Initializes the peripherals clocks 
   */
-  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_LPUART1|RCC_PERIPHCLK_I2C1
-                              |RCC_PERIPHCLK_USB|RCC_PERIPHCLK_ADC12
-                              |RCC_PERIPHCLK_ADC345;
+  PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USART1|RCC_PERIPHCLK_LPUART1
+                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_USB
+                              |RCC_PERIPHCLK_ADC12|RCC_PERIPHCLK_ADC345;
+  PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
   PeriphClkInit.Lpuart1ClockSelection = RCC_LPUART1CLKSOURCE_PCLK1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_PCLK1;
   PeriphClkInit.UsbClockSelection = RCC_USBCLKSOURCE_HSI48;
