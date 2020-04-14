@@ -74,8 +74,6 @@ void Error_Handler(void);
 #define LPUART1_RX_GPIO_Port GPIOA
 #define MOTOR_CURRENT_Pin GPIO_PIN_4
 #define MOTOR_CURRENT_GPIO_Port GPIOA
-#define LED8_Pin GPIO_PIN_4
-#define LED8_GPIO_Port GPIOC
 #define MOTOR_POSITION_Pin GPIO_PIN_0
 #define MOTOR_POSITION_GPIO_Port GPIOB
 #define LED4_Pin GPIO_PIN_1
@@ -92,8 +90,6 @@ void Error_Handler(void);
 #define LED6_GPIO_Port GPIOB
 #define LED5_Pin GPIO_PIN_15
 #define LED5_GPIO_Port GPIOB
-#define MOTOR_CS_Pin GPIO_PIN_8
-#define MOTOR_CS_GPIO_Port GPIOA
 #define MOTOR_SEL0_Pin GPIO_PIN_9
 #define MOTOR_SEL0_GPIO_Port GPIOA
 #define SWA_Pin GPIO_PIN_10
@@ -108,6 +104,8 @@ void Error_Handler(void);
 #define MOTOR_INA_GPIO_Port GPIOB
 #define MOTOR_INB_Pin GPIO_PIN_5
 #define MOTOR_INB_GPIO_Port GPIOB
+#define BUZZER_TIM4CH1_Pin GPIO_PIN_6
+#define BUZZER_TIM4CH1_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
