@@ -98,9 +98,9 @@ typedef enum
 } MeasureVolumeMode_t;
 
 typedef struct MEASURED_PARAMS{
-	int16_t flow;
-	int16_t pressure;
-	int16_t volume_t;
+	float flow;
+	float pressure;
+	float volume_t;
 	MeasureVolumeMode_t volume_mode;
 } MeasuredParams_t;
 
@@ -125,15 +125,15 @@ typedef struct MEASURED_PARAMS{
 
 typedef struct CONTROL_PARAMS{
 	uint8_t mode;		//regulate speed/position
-	int16_t	target_speed;		//max: +-1023, positive value = ispiration
-	int16_t target_position;	//max: +-1023, 0 = completely exhaled, theoretically should not go below 0
-	int16_t cur_speed;
-	int16_t cur_position;
-	int16_t last_position;
-	int16_t max_speed;	//0-1023 speed limit for target position mode - not yet used / does it make sense?
-	int16_t target_pressure;
-	int16_t target_volume;
-	int16_t target_flow;
+	float target_speed;	// max: +-100%
+	float target_position;	// max: +100%, 0 = completely exhaled, theoretically should not go below 0
+	float cur_speed;	// +-100
+	float cur_position;	// 0-100
+	float last_position;	// 0-100
+	float max_speed;	// max: +-100%
+	float target_pressure;	// cmH2O
+	float target_volume;	// ml
+	float target_flow;	// l/min
 	int16_t BreathCounter;	//steje vdihe
 	uint8_t status;	//stanje state machina za dihanje
 	uint8_t Error;	//napake (bitwise)
