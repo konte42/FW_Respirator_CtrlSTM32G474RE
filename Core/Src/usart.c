@@ -217,8 +217,9 @@ void Ringbuf_Init(void)
   _rx_buffer = &rx_buffer;
   _tx_buffer = &tx_buffer;
 
+//TODO: Enabling this interrupt disables TIMER3 CH2 PWM. Figure out why!
   /* Incilizacija "UART Error" prekinitve: (Frame error, noise error, overrun error) */
-  __HAL_UART_ENABLE_IT(&UART0, UART_IT_ERR);
+//  __HAL_UART_ENABLE_IT(&UART0, UART_IT_ERR);
 
   /* Incilizacija "UART Data Register not empty" prekinitve */
   __HAL_UART_ENABLE_IT(&UART0, UART_IT_RXNE);

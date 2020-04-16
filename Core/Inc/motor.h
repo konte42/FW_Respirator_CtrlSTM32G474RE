@@ -24,8 +24,8 @@
 #define MOTOR_POS_CLOSED	(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED) // pos: ||
 
 // maksimalna vredfnost registra za dutycylce
-#define MOTOR_MAX_DC	8499	//before it was 1023
-#define MOTOR_MIN_DC	150	//TODO: 150 -> 8.4*150?
+#define MOTOR_MAX_DC	1023	//before it was 1023
+#define MOTOR_MIN_DC	150		//
 // ******************************
 // Konec Uporabniskih nastavitev
 // ******************************

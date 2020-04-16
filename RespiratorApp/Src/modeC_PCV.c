@@ -66,9 +66,9 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		Control->target_position  = 0;
 		timing=0;
 		dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
-		LED2_Off();
-		LED3_Off();
-		LED4_Off();
+		//LED2_Off();
+		//LED3_Off();
+		//LED4_Off();
 		break;
 		
 		case MODE_STATE_EXP_ZERO_POS_WAIT: // cakaj, da so klesce narazen
@@ -128,13 +128,13 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 			dihanje_state=MODE_STATE_INSP_PRAMP;
 			SETexp_time = SETexp_time - PreStartBoostTime;
 			timing=0;
-			LED4_On();
+			//LED4_On();
 		}
 		if (MeasuredPressure > SETpressure)
 		{
 			Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
 			Control->target_pressure = ((int32_t)SETpressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
-			LED2_On();
+			//LED2_On();
 			SETexp_time = SETexp_time - (PreStartBoostTime + timing);
 			timing = 0;
 			dihanje_state = MODE_STATE_INSP_CONST_P;	//direktno na const. pressure step
@@ -142,7 +142,7 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		break;
 		
 		case MODE_STATE_INSP_PRAMP: //P-ramp
-		LED1_On();
+		//LED1_On();
 		timing += TIME_SLICE_MS;
 		Control->target_pressure = ((((SETpressure-SET_PEEP-PRAMP_OFFSET)*(int32_t)timing)/SETpramp_time + SET_PEEP+PRAMP_OFFSET) * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
 		if (timing >= SETpramp_time)	// gremo v constant pressure
@@ -153,7 +153,7 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		break;
 		
 		case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
-		LED1_Off();
+		//LED1_Off();
 		timing += TIME_SLICE_MS;
 		Control->target_pressure+=PRESSURE_INCREMENT;
 		// ce je prisel do konca, zakljuci cikel vdiha

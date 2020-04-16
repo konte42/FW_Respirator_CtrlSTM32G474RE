@@ -47,8 +47,6 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
 	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR >> 6;
   }
-  //LED7_Tgl();
-
 }
 
 void ADC_Init()

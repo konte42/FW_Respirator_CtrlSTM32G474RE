@@ -157,6 +157,19 @@ int main(void)
   MeasureInit();
   PID_Init(Settings.PID_P,Settings.PID_I,Settings.PID_D,&PIDdata);
   motor_Init();
+/*
+  motor_SetDir(MOTOR_DIR_VDIH);
+  int dc=0;
+  while (1)
+  {
+	dc+=MOTOR_MAX_DC/10;
+	if (dc>MOTOR_MAX_DC) dc=MOTOR_MAX_DC/10;
+
+	motor_SetDutyCycle(dc);
+	HAL_Delay(100);
+
+  }*/
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -176,7 +189,7 @@ int main(void)
     // na 2 ms
     if (ADC_scan_complete())
     {
-      LED1_On();
+      //LED1_On();
       // branje ADC:
       MeasureFlow(&Measured);
       MeasurePressure(&Measured);
@@ -219,7 +232,7 @@ int main(void)
           break;
       }
       //ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
-      LED1_Off();
+      //LED1_Off();
       //koda traja xy us (140 us before hardware abstraction was implemented)
     }
 
@@ -236,7 +249,7 @@ int main(void)
 //    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
     if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
-      LED6_Tgl();
+      //LED6_Tgl();
       mark2+=STATUS_REPORTING_PERIOD;
       length=PrepareStatusMessage(HAL_GetTick(), Measured.flow, Measured.pressure, Measured.volume_t, motor_GetPosition(), motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
       UART0_SendBytes(msg,length);
@@ -246,7 +259,7 @@ int main(void)
       }
       else
       {
-	LED2_Off();
+	//LED2_Off();
       }
     }
     //Listen for commands
@@ -262,7 +275,7 @@ int main(void)
 	    length=ReportAllCurrentSettings(msg,50,&Settings);
 	    if (length > 0)
 	    {
-		    LED2_On();
+		    //LED2_On();
 		    timeout=20;
 		    UART0_SendBytes(msg,length);
 	    }

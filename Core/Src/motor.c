@@ -54,6 +54,7 @@ void motor_Init()
   HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   MotorDir = MOTOR_DIR_UNDEFINED;
+  HAL_TIM_Base_Start(&htim3);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
 }
 
