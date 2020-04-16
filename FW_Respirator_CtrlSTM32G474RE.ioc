@@ -112,6 +112,7 @@ Mcu.UserName=STM32G474RETx
 MxCube.Version=5.6.0
 MxDb.Version=DB.5.0.60
 NVIC.ADC1_2_IRQn=true\:0\:0\:false\:false\:true\:true\:true
+NVIC.ADC3_IRQn=true\:0\:0\:false\:false\:true\:true\:true
 NVIC.BusFault_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 NVIC.DebugMonitor_IRQn=true\:0\:0\:false\:false\:true\:false\:false
 NVIC.EXTI15_10_IRQn=true\:0\:0\:false\:false\:true\:true\:true

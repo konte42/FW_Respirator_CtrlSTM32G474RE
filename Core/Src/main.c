@@ -67,8 +67,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-char tx_buff[]="drek";
-char rx_buff[10];
+
 /* USER CODE END 0 */
 
 /**
@@ -150,7 +149,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  //Ringbuf_Init();
+  Ringbuf_Init();
   HAL_TIM_Base_Start(&htim1);
   HAL_ADC_Start_IT(&hadc1);
   HAL_ADC_Start_IT(&hadc2);
@@ -177,7 +176,7 @@ int main(void)
     // na 2 ms
     if (ADC_scan_complete())
     {
-      //LED1_On();
+      LED1_On();
       // branje ADC:
       MeasureFlow(&Measured);
       MeasurePressure(&Measured);
@@ -220,7 +219,7 @@ int main(void)
           break;
       }
       //ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
-      //LED1_Off();
+      LED1_Off();
       //koda traja xy us (140 us before hardware abstraction was implemented)
     }
 

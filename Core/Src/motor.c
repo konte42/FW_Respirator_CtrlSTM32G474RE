@@ -5,6 +5,7 @@
  *  Author: Kristjan
  */ 
 #include "motor.h"
+#include "adc.h"
 
 extern TIM_HandleTypeDef htim3;
 MotorDir_t MotorDir;
@@ -93,20 +94,14 @@ void motor_SetDutyCycle(uint16_t dutyCycle)
 
 int16_t motor_GetPosition()
 {
-	/*
 	uint16_t raw=*(ADC_results_p()+ADC_CH_POSITION);
 	return (MOTOR_POS_RAW_OPEN-raw) ;
-	*/
-	return 0;
 }
 
 int16_t motor_GetCurrent()
 {
-	/*
 	uint16_t raw=*(ADC_results_p()+ADC_CH_MOTOR_CURRENT);
 	return raw;
-	*/
-	return 0;
 }
 
 int16_t motor_GetPWM()

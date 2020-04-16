@@ -22,6 +22,7 @@
 
 /* USER CODE BEGIN 0 */
 #include <string.h>
+#include "gpio.h"
 /* USER CODE END 0 */
 
 UART_HandleTypeDef hlpuart1;
@@ -338,12 +339,12 @@ void UART_ISR(UART_HandleTypeDef *huart)
 		huart->Instance->ISR;                       /* Read status register */
         unsigned char c = huart->Instance->RDR;     /* Read data register */
         store_char (c, _rx_buffer);  // store data in buffer
-        return;
     }
 
     /*If interrupt is caused due to Transmit Data Register Empty */
-    if (((isrflags & USART_ISR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
+    else if (((isrflags & USART_ISR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
     {
+
     	if(tx_buffer.head == tx_buffer.tail)
     	    {
     	      // Buffer empty, so disable interrupts
@@ -373,7 +374,6 @@ void UART_ISR(UART_HandleTypeDef *huart)
     	      huart->Instance->TDR = c;
 
     	    }
-    	return;
     }
 }
 /* USER CODE END 1 */

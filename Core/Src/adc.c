@@ -30,20 +30,24 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
   if (hadc->Instance == ADC1)
   {
-	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=1;
-	  else ADCstage=2;
-	  if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR;
-	  else 			ADC_results[ADC_CH_FLOW_N] = hadc->Instance->DR;
+	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
+	  else ADCstage=1;
+	  if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR >> 2;
+	  else 			ADC_results[ADC_CH_FLOW_N] = hadc->Instance->DR >> 2;
   }
   else if (hadc->Instance == ADC2)
   {
-	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
-	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
+	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
+	  else ADCstage=1;
+	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR >> 2;
+	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR >> 6;
+	  ADC_complete=1;
   }
   else if (hadc->Instance == ADC3)
   {
-	  if (ADCstage == 1) ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
+	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR >> 6;
   }
+  //LED7_Tgl();
 
 }
 
@@ -324,6 +328,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(MOTOR_POSITION_GPIO_Port, &GPIO_InitStruct);
 
+    /* ADC3 interrupt Init */
+    HAL_NVIC_SetPriority(ADC3_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC3_IRQn);
   /* USER CODE BEGIN ADC3_MspInit 1 */
 
   /* USER CODE END ADC3_MspInit 1 */
@@ -408,6 +415,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     */
     HAL_GPIO_DeInit(MOTOR_POSITION_GPIO_Port, MOTOR_POSITION_Pin);
 
+    /* ADC3 interrupt Deinit */
+    HAL_NVIC_DisableIRQ(ADC3_IRQn);
   /* USER CODE BEGIN ADC3_MspDeInit 1 */
 
   /* USER CODE END ADC3_MspDeInit 1 */
