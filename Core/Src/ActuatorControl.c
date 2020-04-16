@@ -23,8 +23,10 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 	{
 		case CTRL_PAR_MODE_STOP:
 			motor_SetDutyCycle(0);
+			motor_SetDir(MOTOR_DIR_IZDIH);
 			PID_Reset_Integrator(PIDdata);
 			break;
+
 		case CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION:
 			motor_SetDutyCycle(MOTOR_MIN_DC);
 			break;
@@ -71,7 +73,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 			}
 			//if ((newDC-lastDC) > MAX_DC_CHANGE) {newDC = lastDC + MAX_DC_CHANGE;}
 			//else if ((newDC-lastDC) < -MAX_DC_CHANGE) {newDC = lastDC-MAX_DC_CHANGE;}
-			newDC=FIR(newDC);
+			//newDC=FIR(newDC);
 			if (newDC > 0)
 			{
 				motor_SetDir(MOTOR_DIR_VDIH);
@@ -101,7 +103,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 			}
 			//if ((newDC-lastDC) > MAX_DC_CHANGE) {newDC = lastDC + MAX_DC_CHANGE;}
 			//else if ((newDC-lastDC) < -MAX_DC_CHANGE) {newDC = lastDC-MAX_DC_CHANGE;}
-			newDC=FIR(newDC);
+			//newDC=FIR(newDC);
 			if (newDC > 0)
 			{
 				motor_SetDir(MOTOR_DIR_VDIH);

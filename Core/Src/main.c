@@ -100,7 +100,7 @@ int main(void)
 	  //V končni verziji se to prebere iz eeproma,
 	  //da takoj nadaljujemo od koder smo končali,
 	  //če se slučajno pobiramo iz nenamernega reseta
-	  Settings.current_mode=MODE_STOP;
+	  Settings.current_mode=MODE_DEFAULT;
 	  Settings.new_mode=MODE_DEFAULT;
 	  Settings.target_Pramp_time=SETTINGS_DEFAULT_RAMPUP_TIME_MS;
 	  Settings.target_inspiratory_time=SETTINGS_DEFAULT_INHALE_TIME_MS;

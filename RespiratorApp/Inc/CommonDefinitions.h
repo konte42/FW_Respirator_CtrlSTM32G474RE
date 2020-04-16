@@ -21,7 +21,7 @@
 #endif
 #define STATUS_REPORTING_PERIOD	10	// ms
 
-#define MODE_DEFAULT	6	//Kateri je default?
+#define MODE_DEFAULT	0	//Kateri je default?
 #define MODE_STOP	0
 #define MODE_C_VCV	1		
 #define MODE_C_PCV	2
