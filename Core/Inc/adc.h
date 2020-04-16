@@ -41,11 +41,19 @@ extern ADC_HandleTypeDef hadc3;
 #define ADC_FILTER_N	16
 //#define ADC_DOUBLE_BUFFERING
 
+#ifdef AVR
 #define ADC_CH_FLOW			ADC_STARTCHAN
 #define ADC_CH_PRESSURE		(ADC_STARTCHAN+1)
 #define ADC_CH_MOTOR_CURRENT	(ADC_STARTCHAN+2)
 #define ADC_CH_POSITION		(ADC_STARTCHAN+3)
 #define ADC_CH_FLOW_N		(ADC_STARTCHAN+4)
+#else
+#define ADC_CH_FLOW				0	//Channel numbers are critical for setting up DMA
+#define ADC_CH_PRESSURE			2
+#define ADC_CH_MOTOR_CURRENT	3
+#define ADC_CH_POSITION			4
+#define ADC_CH_FLOW_N			1
+#endif
 
 /* USER CODE END Private defines */
 
@@ -54,6 +62,7 @@ void MX_ADC2_Init(void);
 void MX_ADC3_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc);
 
 void ADC_Init();
 char ADC_scan_complete();

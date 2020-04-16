@@ -86,7 +86,6 @@ int main(void)
 	#endif
 	  uint32_t mark2=0;
 	  uint8_t newSettingsReceived;
-	  uint8_t operationMode=MODE_DEFAULT;
 
 	  RespSettings_t	Settings;
 	  MeasuredParams_t Measured;
@@ -149,8 +148,13 @@ int main(void)
   MX_ADC2_Init();
   MX_ADC3_Init();
   MX_TIM3_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-  Ringbuf_Init();
+  //Ringbuf_Init();
+  HAL_TIM_Base_Start(&htim1);
+  HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start_IT(&hadc2);
+  HAL_ADC_Start_IT(&hadc3);
   MeasureInit();
   PID_Init(Settings.PID_P,Settings.PID_I,Settings.PID_D,&PIDdata);
   motor_Init();
@@ -168,16 +172,7 @@ int main(void)
     }
   }*/
   int timeout=0;
-  while (1)
-  {
-    if (UART0_DataReady())
-    {
-      char data;
-      UART0_GetByte(&data);
-      UART0_put(data);
-    }
-  }
-  if (0)
+  while(1)
   {
     // na 2 ms
     if (ADC_scan_complete())
@@ -189,7 +184,7 @@ int main(void)
       MeasureVolume(&Measured);
 
       //TODO: mode state machines must return HW independent control values
-      switch (operationMode)
+      switch (Settings.current_mode)
       {
         case MODE_STOP:
           modeSTOP(&Settings, &Measured, &Control);
@@ -221,7 +216,7 @@ int main(void)
           break;
         default:
           ReportError(ModeUnknownMode,NULL/*"Unknown operation mode"*/);
-          operationMode = MODE_DEFAULT;
+          Settings.current_mode = MODE_DEFAULT;
           break;
       }
       //ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
@@ -242,6 +237,7 @@ int main(void)
 //    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
     if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
+      LED6_Tgl();
       mark2+=STATUS_REPORTING_PERIOD;
       length=PrepareStatusMessage(HAL_GetTick(), Measured.flow, Measured.pressure, Measured.volume_t, motor_GetPosition(), motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
       UART0_SendBytes(msg,length);

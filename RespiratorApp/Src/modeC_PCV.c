@@ -7,8 +7,8 @@
 //Opisi mode, da vemo kaj pocnemo
 
 #include "modeC_PCV.h"
-#include "../Measure.h"
-#include "../GPIO.h"
+#include "Measure.h"
+#include "GPIO.h"
 
 #define PRESSURE_CTRL_LOOP_THERSHOLD	50
 

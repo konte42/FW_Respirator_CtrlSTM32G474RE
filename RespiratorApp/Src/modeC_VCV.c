@@ -6,10 +6,10 @@
  */ 
 //Opisi mode, da vemo kaj pocnemo
 
-//Pri lovljenju ustreznega volumna ima prednost ÈAS (Target inspiratory time)
+//Pri lovljenju ustreznega volumna ima prednost ï¿½AS (Target inspiratory time)
 #include "modeC_VCV.h"
-#include "../Measure.h"
-#include "../GPIO.h"
+#include "Measure.h"
+#include "GPIO.h"
 
 #if 0
 

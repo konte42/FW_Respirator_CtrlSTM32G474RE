@@ -49,6 +49,18 @@
 #define LED4_Off()	HAL_GPIO_WritePin(LED4_GPIO_Port,LED4_Pin,GPIO_PIN_RESET)
 #define LED4_Tgl()	HAL_GPIO_TogglePin(LED4_GPIO_Port,LED4_Pin)
 
+#define LED5_On()	HAL_GPIO_WritePin(LED5_GPIO_Port,LED5_Pin,GPIO_PIN_SET)
+#define LED5_Off()	HAL_GPIO_WritePin(LED5_GPIO_Port,LED5_Pin,GPIO_PIN_RESET)
+#define LED5_Tgl()	HAL_GPIO_TogglePin(LED5_GPIO_Port,LED5_Pin)
+
+#define LED6_On()	HAL_GPIO_WritePin(LED6_GPIO_Port,LED6_Pin,GPIO_PIN_SET)
+#define LED6_Off()	HAL_GPIO_WritePin(LED6_GPIO_Port,LED6_Pin,GPIO_PIN_RESET)
+#define LED6_Tgl()	HAL_GPIO_TogglePin(LED6_GPIO_Port,LED6_Pin)
+
+#define LED7_On()	HAL_GPIO_WritePin(LED7_GPIO_Port,LED7_Pin,GPIO_PIN_SET)
+#define LED7_Off()	HAL_GPIO_WritePin(LED7_GPIO_Port,LED7_Pin,GPIO_PIN_RESET)
+#define LED7_Tgl()	HAL_GPIO_TogglePin(LED7_GPIO_Port,LED7_Pin)
+
 /* USER CODE END Private defines */
 
 void MX_GPIO_Init(void);

@@ -5,8 +5,8 @@
  *  Author: maticpi
  */ 
 #include "modeHWtest.h"
-#include "../GPIO.h"
-#include "../Measure.h"
+#include "GPIO.h"
+#include "Measure.h"
 
 #define MODE_STATE_FIRST_RUN				-1
 #define MODE_STATE_EXP_START				0

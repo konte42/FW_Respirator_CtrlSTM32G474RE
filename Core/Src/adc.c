@@ -22,38 +22,38 @@
 
 /* USER CODE BEGIN 0 */
 
-
-uint8_t ADC_channel = 0;
+int ADCstage=0;
 uint8_t ADC_complete = 0;
-static volatile uint16_t Filter_Array_0[ADC_FILTER_N];
-static volatile uint16_t Filter_Array_1[ADC_FILTER_N];
-static volatile uint16_t Filter_Array_4[ADC_FILTER_N];
-uint16_t ADC_results_int[5]={0,0,0,0,0};	// interni rezultati - double buffering
-#ifdef ADC_DOUBLE_BUFFERING
-	uint16_t ADC_results[5];	//rezultati, ki se vrnejo v main - inicializacija na 0 zagotovljena
-#endif
-static volatile uint8_t filter_count, filter_count_old;
+uint16_t ADC_results[5]={0,0,0,0,0};	// interni rezultati - double buffering
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
+{
+  if (hadc->Instance == ADC1)
+  {
+	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=1;
+	  else ADCstage=2;
+	  if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR;
+	  else 			ADC_results[ADC_CH_FLOW_N] = hadc->Instance->DR;
+  }
+  else if (hadc->Instance == ADC2)
+  {
+	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
+	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
+  }
+  else if (hadc->Instance == ADC3)
+  {
+	  if (ADCstage == 1) ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
+  }
+
+}
 
 void ADC_Init()
 {
-	ADC_channel = ADC_STARTCHAN;
-	filter_count = 0;
-	filter_count_old = 1;
-	for (uint8_t i=0;i<ADC_FILTER_N;i++)
-	{
-		Filter_Array_0[i]=0;
-		Filter_Array_1[i]=0;
-		Filter_Array_4[i]=0;
-	}
 }
 
 uint16_t *ADC_results_p(void)
 {
-	#ifdef ADC_DOUBLE_BUFFERING
-		return ADC_results;
-	#else
-		return ADC_results_int;
-	#endif
+	return ADC_results;
 }
 
 char ADC_scan_complete()
@@ -85,7 +85,7 @@ void MX_ADC1_Init(void)
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.GainCompensation = 0;
   hadc1.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc1.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.ContinuousConvMode = DISABLE;
   hadc1.Init.NbrOfConversion = 2;
@@ -145,7 +145,7 @@ void MX_ADC2_Init(void)
   hadc2.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc2.Init.GainCompensation = 0;
   hadc2.Init.ScanConvMode = ADC_SCAN_ENABLE;
-  hadc2.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc2.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc2.Init.LowPowerAutoWait = DISABLE;
   hadc2.Init.ContinuousConvMode = DISABLE;
   hadc2.Init.NbrOfConversion = 2;
@@ -199,7 +199,7 @@ void MX_ADC3_Init(void)
   hadc3.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc3.Init.GainCompensation = 0;
   hadc3.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc3.Init.EOCSelection = ADC_EOC_SEQ_CONV;
+  hadc3.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc3.Init.LowPowerAutoWait = DISABLE;
   hadc3.Init.ContinuousConvMode = DISABLE;
   hadc3.Init.NbrOfConversion = 1;
@@ -272,6 +272,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(FLOW_P_GPIO_Port, &GPIO_InitStruct);
 
+    /* ADC1 interrupt Init */
+    HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC1_MspInit 1 */
 
   /* USER CODE END ADC1_MspInit 1 */
@@ -297,6 +300,9 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+    /* ADC2 interrupt Init */
+    HAL_NVIC_SetPriority(ADC1_2_IRQn, 0, 0);
+    HAL_NVIC_EnableIRQ(ADC1_2_IRQn);
   /* USER CODE BEGIN ADC2_MspInit 1 */
 
   /* USER CODE END ADC2_MspInit 1 */
@@ -346,6 +352,15 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
 
     HAL_GPIO_DeInit(FLOW_P_GPIO_Port, FLOW_P_Pin);
 
+    /* ADC1 interrupt Deinit */
+  /* USER CODE BEGIN ADC1:ADC1_2_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
+  /* USER CODE END ADC1:ADC1_2_IRQn disable */
+
   /* USER CODE BEGIN ADC1_MspDeInit 1 */
 
   /* USER CODE END ADC1_MspDeInit 1 */
@@ -366,6 +381,15 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     PA4     ------> ADC2_IN17 
     */
     HAL_GPIO_DeInit(GPIOA, PRESSURE_Pin|MOTOR_CURRENT_Pin);
+
+    /* ADC2 interrupt Deinit */
+  /* USER CODE BEGIN ADC2:ADC1_2_IRQn disable */
+    /**
+    * Uncomment the line below to disable the "ADC1_2_IRQn" interrupt
+    * Be aware, disabling shared interrupt may affect other IPs
+    */
+    /* HAL_NVIC_DisableIRQ(ADC1_2_IRQn); */
+  /* USER CODE END ADC2:ADC1_2_IRQn disable */
 
   /* USER CODE BEGIN ADC2_MspDeInit 1 */
 
