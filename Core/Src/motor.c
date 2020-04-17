@@ -73,6 +73,43 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
+void motor_setSpeed(float speed)	// -100 - 100
+{
+	uint16_t dc;
+
+	if (speed >= 0)
+	{
+		if (speed > 100) speed = 100;
+		if (MotorDir!=MOTOR_DIR_VDIH) motor_SetDir(MOTOR_DIR_VDIH);
+		dc = (uint16_t)(speed / 100.0 * (MOTOR_MAX_DC-MOTOR_MIN_DC)) + MOTOR_MIN_DC;
+		motor_SetRawDutyCycle(dc);
+	}
+	else
+	{
+		speed = -speed;
+		if (speed > 100) speed = 100;
+		if (MotorDir!=MOTOR_DIR_IZDIH) motor_SetDir(MOTOR_DIR_IZDIH);
+		dc = (uint16_t)(speed / 100.0 * MOTOR_MAX_DC);
+		motor_SetRawDutyCycle(dc);
+	}
+}
+
+void motor_SetRawDutyCycle(uint16_t dutyCycle)
+{
+	if (dutyCycle>MOTOR_MAX_DC) dutyCycle = MOTOR_MAX_DC;
+	if ( MotorDir==MOTOR_DIR_VDIH) // ko stiskamo, ne sme DC nikoli pasti na nic, tudi ce pride do konca
+	{
+		if (!HAL_GPIO_ReadPin(SWA_GPIO_Port, SWA_Pin)) { TIM3->CCR2 = dutyCycle; }
+		else TIM3->CCR2 = MOTOR_MIN_DC;
+	}
+	else	//izdih
+	{
+		if (!HAL_GPIO_ReadPin(SWB_GPIO_Port, SWB_Pin)) { TIM3->CCR2 = dutyCycle; }
+		else TIM3->CCR2=0;
+	}
+}
+
+
 void motor_SetDutyCycle(uint16_t dutyCycle)
 {
 	if (dutyCycle>MOTOR_MAX_DC) dutyCycle = MOTOR_MAX_DC;
@@ -93,16 +130,24 @@ void motor_SetDutyCycle(uint16_t dutyCycle)
 
 
 
-int16_t motor_GetPosition()
+float motor_GetPosition()	//0 - 100 = normal open - normal closed
 {
-	uint16_t raw=*(ADC_results_p()+ADC_CH_POSITION);
-	return (MOTOR_POS_RAW_OPEN-raw) ;
+	float raw=*(ADC_results_p()+ADC_CH_POSITION);
+	return (float)(MOTOR_POS_RAW_OPEN-raw)/(float)(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED)*100.0 ;
 }
 
-int16_t motor_GetCurrent()
+float motor_GetCurrent()
 {
-	uint16_t raw=*(ADC_results_p()+ADC_CH_MOTOR_CURRENT);
-	return raw;
+	float raw=*(ADC_results_p()+ADC_CH_MOTOR_CURRENT);
+	return raw*0.624179;	// mA
+}
+
+float motor_GetSpeedSetting()	// 0 - 100
+{
+	float speed;
+
+	speed = (float)motor_GetPWM() / MOTOR_MAX_DC * 100.0;
+	return speed;
 }
 
 int16_t motor_GetPWM()
