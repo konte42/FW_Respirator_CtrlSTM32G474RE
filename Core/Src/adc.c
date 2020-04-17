@@ -32,20 +32,20 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
 	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
 	  else ADCstage=1;
-	  if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR >> 2;
-	  else 			ADC_results[ADC_CH_FLOW_N] = hadc->Instance->DR >> 2;
+	  if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR;
+	  else 			ADC_results[ADC_CH_FLOW_N] = hadc->Instance->DR;
   }
   else if (hadc->Instance == ADC2)
   {
 	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
 	  else ADCstage=1;
-	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR >> 2;
-	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR >> 6;
+	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
+	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
 	  ADC_complete=1;
   }
   else if (hadc->Instance == ADC3)
   {
-	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR >> 6;
+	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
   }
 }
 
