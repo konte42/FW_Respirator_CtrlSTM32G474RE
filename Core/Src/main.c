@@ -251,7 +251,7 @@ int main(void)
     {
       //LED6_Tgl();
       mark2+=STATUS_REPORTING_PERIOD;
-      length=PrepareStatusMessage(HAL_GetTick(), Measured.flow, Measured.pressure, Measured.volume_t, motor_GetPosition(), motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
+      length=PrepareStatusMessage(HAL_GetTick(), (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0), (int16_t)(Measured.volume_t*10.0), (int16_t)(motor_GetPosition()), (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
       UART0_SendBytes(msg,length);
       if (timeout > 0 )
       {
