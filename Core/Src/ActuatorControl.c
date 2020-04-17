@@ -8,216 +8,189 @@
 
 //int32_t FIR(int16_t new_x);
 
-void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, pidData_t *PIDdata)
+
+//TODO: every time control mode is changed, PID must be reset and loaded with appropriate parameters
+void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, fpidData_t *PIDdata)
 {
-	int16_t motorSpeed;
-	//static int16_t lastDC;
-	int16_t newDC;
-	#define MAX_DC_CHANGE	5
-	//TODO: Test for errors due to variable length!!!
+//  static uint8_t last_mode = CTRL_PAR_MODE_STOP;
+//  uint8_t cur_mode = Control->mode;
+  float motorSpeed;
 	Control->cur_position = motor_GetPosition();
-	//TODO: determine appropriate multiplier for speed. Current time difference is 5 ms 
-	Control->cur_speed = Control->cur_position - Control->last_position;
+	Control->cur_speed = (Control->cur_position - Control->last_position) / TIME_SLICE_MS;
 	
 	switch(Control->mode)
 	{
+// STOP MODES ///////////////////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_STOP:
-			motor_SetDutyCycle(0);
-			motor_SetDir(MOTOR_DIR_IZDIH);
-			PID_Reset_Integrator(PIDdata);
+			motor_SetSpeed(0);
+			PID_fReset(PIDdata);
 			break;
 
 		case CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION:
-			motor_SetDutyCycle(MOTOR_MIN_DC);
-			break;
-		
+      motor_SetSpeed(0.01);  //turn motor direction to close (inhale) and
+			break;                 //maintain minimum duty cycle to hold clamps together
+
+// SPEED CONTROL MODE ///////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_TARGET_SPEED:
 			if (Control->target_speed > 0)
 			{
 				if (Control->cur_position < CTRL_PAR_MAX_POSITION)	//Obey if within limits
-				{
-					motor_SetDir(MOTOR_DIR_VDIH);
-					motor_SetDutyCycle(Control->target_speed);
-				}
-				else
-				{
-					motor_SetDutyCycle(0);	//Stop if too far
-				}
+				  { motor_SetSpeed(Control->target_speed);}
+				else {  motor_SetSpeed(0); }	//Stop if too far
 			}
-			else
+			else //else if (Control->target_speed < 0)
 			{
 				if (Control->cur_position > CTRL_PAR_MIN_POSITION)	//Obey if within limits
-				{
-					motor_SetDir(MOTOR_DIR_IZDIH);
-					motor_SetDutyCycle(-Control->target_speed);	//if and negation is probably faster than abs()
-				}
-				else
-				{
-					motor_SetDutyCycle(0);	//Stop if too far
-				}
+				  { motor_SetSpeed(Control->target_speed);}
+        else {  motor_SetSpeed(0); }  //Stop if too far
 			}
 			break;
 
-		
+// POSITION REGULATION MODES ///////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_TARGET_POSITION_INHALE:
-
-			newDC=0;
 			if (Control->target_position - Control->cur_position >= 0)
 			{
-				if (Control->target_position - Control->cur_position > 2) newDC=MOTOR_MAX_DC;
-				else
-				{
-					newDC = MOTOR_MAX_DC/2;
-					//Control->mode=CTRL_PAR_MODE_STOP;
-				}
+				if (Control->target_position - Control->cur_position > 2) { motorSpeed=100; }
+				else { motorSpeed = 50; }
 			}
-			//if ((newDC-lastDC) > MAX_DC_CHANGE) {newDC = lastDC + MAX_DC_CHANGE;}
-			//else if ((newDC-lastDC) < -MAX_DC_CHANGE) {newDC = lastDC-MAX_DC_CHANGE;}
-			//newDC=FIR(newDC);
-			if (newDC > 0)
+			if (motorSpeed > 0)
 			{
-				motor_SetDir(MOTOR_DIR_VDIH);
-				motor_SetDutyCycle(newDC);
+				motor_SetSpeed(motorSpeed);
 			}
 			
 		break;
 		
-		case CTRL_PAR_MODE_TARGET_POSITION:
-			newDC=0;
+		case CTRL_PAR_MODE_TARGET_POSITION: //Replace with PID regulator
+		  motorSpeed=0;
 			if (Control->target_position - Control->cur_position >= 0)
 			{
-				if (Control->target_position - Control->cur_position > 2) newDC=MOTOR_MAX_DC/2;
+				if (Control->target_position - Control->cur_position > 2) motorSpeed=50;
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;
+          motor_SetSpeed(0);
 				}
 			}
 			if (Control->target_position - Control->cur_position < 0)
 			{
-				if (Control->target_position - Control->cur_position < -2) newDC=-MOTOR_MAX_DC/4;
+				if (Control->target_position - Control->cur_position < -2) motorSpeed=-25;
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;
-					motor_SetDutyCycle(0);
+					motor_SetSpeed(0);
 				}
 			}
-			//if ((newDC-lastDC) > MAX_DC_CHANGE) {newDC = lastDC + MAX_DC_CHANGE;}
-			//else if ((newDC-lastDC) < -MAX_DC_CHANGE) {newDC = lastDC-MAX_DC_CHANGE;}
-			//newDC=FIR(newDC);
-			if (newDC > 0)
-			{
-				motor_SetDir(MOTOR_DIR_VDIH);
-				motor_SetDutyCycle(newDC);
-			}
-			else
-			{
-				motor_SetDir(MOTOR_DIR_IZDIH);
-				motor_SetDutyCycle(-newDC);
-			}
+			motor_SetSpeed(motorSpeed);
 		break;
 
+// PRESSURE REGULATION MODES ///////////////////////////////////////////////////////////
+// dummy regulation for motor start-up - should probably be solved differently
 		case CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET:
-			PID_Init(Settings->PID_P,Settings->PID_I,Settings->PID_D,PIDdata);
+			PID_fInit(Settings->PID_Pressure.P_Factor,
+			          Settings->PID_Pressure.I_Factor,
+			          Settings->PID_Pressure.D_Factor,
+			          Settings->PID_Pressure.maxError,
+			          Settings->PID_Pressure.maxSumError,
+			          PIDdata);
 			Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE;
 			//DO NOT PUT BREAK HERE!
+
 		case CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE:
 			//can only regulate inspiration		//pressure span 50mmH2O --> cca 14500 (14500/16 = cca 900)
-			motorSpeed = PID_Calculate(Control->target_pressure/16, Measured->pressure/16, PIDdata);
+			motorSpeed = PID_fCalculate(1,Control->target_pressure, Measured->pressure, PIDdata);
 			if (Control->target_speed > 0)
 			{
 				if (Control->cur_position < CTRL_PAR_MAX_POSITION)	//Obey if within limits
-				{
-					motor_SetDir(MOTOR_DIR_VDIH);
-					motor_SetDutyCycle(Control->target_speed);
-				}
-				else
-				{
-					motor_SetDutyCycle(0);	//Stop if too far
-				}
+				{ motor_SetSpeed(Control->target_speed); }
+				else { motor_SetSpeed(0); } //Stop if too far
 			}
-			else
+			else // if (Control->target_speed < 0)
 			{
 				if (Control->cur_position > CTRL_PAR_MIN_POSITION)	//Obey if within limits
-				{
-					motor_SetDir(MOTOR_DIR_IZDIH);
-					motor_SetDutyCycle(-Control->target_speed);	//if and negation is probably faster than abs()
-				}
-				else
-				{
-					motor_SetDutyCycle(0);	//Stop if too far
-				}
+        { motor_SetSpeed(Control->target_speed); }
+        else { motor_SetSpeed(0); } //Stop if too far
 			}
 			break;
-		
+
+////////////////// normal pressure regulation mode /////////////////////////
 		case CTRL_PAR_MODE_REGULATE_PRESSURE_PID_RESET:
-			PID_Init(Settings->PID_P,Settings->PID_I,Settings->PID_D,PIDdata);
+      PID_fInit(Settings->PID_Pressure.P_Factor,
+                Settings->PID_Pressure.I_Factor,
+                Settings->PID_Pressure.D_Factor,
+                Settings->PID_Pressure.maxError,
+                Settings->PID_Pressure.maxSumError,
+                PIDdata);
 			Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
 			//DO NOT PUT BREAK HERE!
+
 		case CTRL_PAR_MODE_REGULATE_PRESSURE:
 			//can only regulate inspiration		//pressure span 50mmH2O --> cca 14500 (14500/16 = cca 900)
-			motorSpeed = PID_Calculate(Control->target_pressure/16, Measured->pressure/16, PIDdata);
-			//motorSpeed = FIR(motorSpeed);
-			motor_SetDir(MOTOR_DIR_VDIH);
-			
+		  motorSpeed = PID_fCalculate(1,Control->target_pressure, Measured->pressure, PIDdata);
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
 			{
-//				Control->mode=CTRL_PAR_MODE_STOP;
-				motorSpeed = MOTOR_MIN_DC;
+				motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
-			else
-			{
-				if (motorSpeed<MOTOR_MIN_DC) motorSpeed = MOTOR_MIN_DC;					
-			}
+			if (motorSpeed < 0) motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			motor_SetDutyCycle(motorSpeed);	
 		break;
 
-		
+// VOLUME REGULATION MODES ///////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_REGULATE_VOLUME_PID_RESET:
-			PID_Init(Settings->PID_P,Settings->PID_I,Settings->PID_D,PIDdata);
+      PID_fInit(Settings->PID_Volume.P_Factor,
+                Settings->PID_Volume.I_Factor,
+                Settings->PID_Volume.D_Factor,
+                Settings->PID_Volume.maxError,
+                Settings->PID_Volume.maxSumError,
+                PIDdata);
 			Control->mode=CTRL_PAR_MODE_REGULATE_VOLUME;
+      //DO NOT PUT BREAK HERE!
+
 		case CTRL_PAR_MODE_REGULATE_VOLUME:
 			//can only regulate inspiration		//volume span 1000, measured span 10000
-			motorSpeed = PID_Calculate(Control->target_volume, Measured->volume_t/10, PIDdata);
-			motor_SetDir(MOTOR_DIR_VDIH);
+			motorSpeed = PID_fCalculate(1,Control->target_volume, Measured->volume_t/10, PIDdata);
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
 			{
-				//				Control->mode=CTRL_PAR_MODE_STOP;
-				motorSpeed = MOTOR_MIN_DC;
+        motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
-			else
-			{
-				if (motorSpeed<MOTOR_MIN_DC) motorSpeed = MOTOR_MIN_DC;
-			}
+			if (motorSpeed<0) motorSpeed = 0.01;
 			motor_SetDutyCycle(motorSpeed);
 		break;
 
+// FLOW REGULATION MODES ///////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET:
-			PID_Init(Settings->PID_P,Settings->PID_I,Settings->PID_D,PIDdata);
+      PID_fInit(Settings->PID_Flow.P_Factor,
+                Settings->PID_Flow.I_Factor,
+                Settings->PID_Flow.D_Factor,
+                Settings->PID_Flow.maxError,
+                Settings->PID_Flow.maxSumError,
+                PIDdata);
 			Control->mode=CTRL_PAR_MODE_REGULATE_FLOW;
+      //DO NOT PUT BREAK HERE!
+
 		case CTRL_PAR_MODE_REGULATE_FLOW:
-			//can only regulate inspiration		//flow span 150 l/min --> *6 to use approximately the same PID params
-			motorSpeed = PID_Calculate(Control->target_flow*6, Measured->flow*6, PIDdata);	//flow range +-150 l/min
-			motor_SetDir(MOTOR_DIR_VDIH);
+			//can only regulate inspiration
+			motorSpeed = PID_fCalculate(1,Control->target_flow, Measured->flow, PIDdata);
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
 			{
-				//				Control->mode=CTRL_PAR_MODE_STOP;
-				motorSpeed = MOTOR_MIN_DC;
+        motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
-			else
-			{
-				if (motorSpeed<MOTOR_MIN_DC) motorSpeed = MOTOR_MIN_DC;
-			}
-			motor_SetDutyCycle(motorSpeed);
+      if (motorSpeed<0) motorSpeed = 0.01;
+      motor_SetDutyCycle(motorSpeed);
 		break;
 
+///////////////////////////////////////////////////////////////////////////////////
+// ERROR - UNKNOWN MODE ///////////////////////////////////////////////////////////
 		default: //Error: Stop immediately
 		ReportError(ActuatorCtrlUnknownMode,NULL/*"Unknown actuator control mode"*/);
 		Control->mode=CTRL_PAR_MODE_TARGET_POSITION;
 		motor_SetDutyCycle(0);
 		break;
 	}
+
+//	last_mode = cur_mode;
 	Control->last_position = Control->cur_position;
 }
+
 /*
 int32_t FIR(int16_t new_x)
 {

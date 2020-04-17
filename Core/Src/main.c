@@ -67,7 +67,7 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-
+fpidData_t PIDdata;
 /* USER CODE END 0 */
 
 /**
@@ -89,13 +89,13 @@ int main(void)
 	  RespSettings_t	Settings;
 	  MeasuredParams_t Measured;
 	  CtrlParams_t Control;
-	  pidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
+//	  fpidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
 						  //Maybe make PID params local to ActuatorControl?
 
 	  memset(&Settings,0,sizeof(RespSettings_t));
 	  memset(&Measured,0,sizeof(MeasuredParams_t));
 	  memset(&Control,0,sizeof(CtrlParams_t));
-	  memset(&PIDdata,0,sizeof(pidData_t));
+	  memset(&PIDdata,0,sizeof(fpidData_t));
 
 	  //V končni verziji se to prebere iz eeproma,
 	  //da takoj nadaljujemo od koder smo končali,
@@ -108,12 +108,19 @@ int main(void)
 	  Settings.target_volume=SETTINGS_DEFAULT_TARGET_VOLUME_ML;
 	  Settings.PEEP = SETTINGS_DEFAULT_PEEP;
 	  Settings.PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
-	  Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
+    Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
 
-	  Settings.PID_P = SETTINGS_DEFAULT_PID_P;
-	  Settings.PID_I = SETTINGS_DEFAULT_PID_I;
-	  Settings.PID_D = SETTINGS_DEFAULT_PID_D;
-	  Settings.MOT_POS = SETTINGS_DEFAULT_MOT_POS;
+    Settings.PID_Pressure.P_Factor = SETTINGS_DEFAULT_PRESSURE_PID_P;
+    Settings.PID_Pressure.I_Factor = SETTINGS_DEFAULT_PRESSURE_PID_I;
+    Settings.PID_Pressure.D_Factor = SETTINGS_DEFAULT_PRESSURE_PID_D;
+    Settings.PID_Pressure.maxError = SETTINGS_DEFAULT_PRESSURE_PID_MAXERR;
+    Settings.PID_Pressure.maxSumError = SETTINGS_DEFAULT_PRESSURE_PID_MAXSUMERR;
+    Settings.PID_Pressure.maxOut = SETTINGS_DEFAULT_PRESSURE_PID_MAXOUT;
+    Settings.PID_Pressure.minOut = SETTINGS_DEFAULT_PRESSURE_PID_MINOUT;
+
+//	  Settings.PID_P = SETTINGS_DEFAULT_PID_P;
+//	  Settings.PID_I = SETTINGS_DEFAULT_PID_I;
+//	  Settings.PID_D = SETTINGS_DEFAULT_PID_D;
 
 	  //TODO: read current state of the machine
 	  //Is it possible the get the exact state?
@@ -155,7 +162,6 @@ int main(void)
   HAL_ADC_Start_IT(&hadc2);
   HAL_ADC_Start_IT(&hadc3);
   MeasureInit();
-  PID_Init(Settings.PID_P,Settings.PID_I,Settings.PID_D,&PIDdata);
   motor_Init();
 /*
   motor_SetDir(MOTOR_DIR_VDIH);

@@ -71,7 +71,7 @@ int16_t PID_Calculate(int16_t setPoint, int16_t processValue, struct PID_DATA *p
 
   pid_st->lastError = error;
 
-  ret = (p_term + i_term * (samplingTime / 1000) + d_term / (samplingTime / 1000)) / SCALING_FACTOR;
+  ret = (p_term + ((int32_t)i_term * PID_SAMPLING_TIME) / 1000 + (d_term*1000L) / PID_SAMPLING_TIME ) / SCALING_FACTOR;
   if(ret > MAX_INT){
     ret = MAX_INT;
   }
@@ -165,6 +165,7 @@ float PID_fCalculate(int samplingTime, float setPoint, float processValue, fpidD
   pid_st->lastError = error;
 
   ret = (p_term + i_term * (samplingTime / 1000.0) + d_term / (samplingTime / 1000.0));
+  //TODO: Add limits as parameters in PID structure
   if(ret > MAX_INT){
     ret = MAX_INT;
   }

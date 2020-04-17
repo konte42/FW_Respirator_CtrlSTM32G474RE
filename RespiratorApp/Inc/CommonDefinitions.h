@@ -11,6 +11,8 @@
 
 #include <inttypes.h>
 #include <stddef.h>
+#define PID_SAMPLING_TIME   TIME_SLICE_MS   //only applies to the INT version of PID.
+#include "PID.h"  //PID_SAMPLING_TIME must be defined before including "PID.h"
 
 //app defines
 #define MSG_CORE_LENGTH	20
@@ -40,35 +42,62 @@
 #define SETTINGS_DEFAULT_PEEP					50		// mmH2O
 #define SETTINGS_DEFAULT_TARGET_VOLUME_ML		400		// milliliters
 
-#define SETTINGS_DEFAULT_PID_P		64	// = P/SCALING_FACTOR = 0.5
-#define SETTINGS_DEFAULT_PID_I		1	// = I/SCALING_FACTOR
-#define SETTINGS_DEFAULT_PID_D		0	// = D/SCALING_FACTOR
-#define	SETTINGS_DEFAULT_MOT_POS	-1	//	-1 = do nothing, 0< go to position
+#define SETTINGS_DEFAULT_PRESSURE_PID_P	        	0.5 //64	// = P/SCALING_FACTOR = 0.5
+#define SETTINGS_DEFAULT_PRESSURE_PID_I       		0.1 //1	// = I/SCALING_FACTOR
+#define SETTINGS_DEFAULT_PRESSURE_PID_D           0 // = D/SCALING_FACTOR
+#define SETTINGS_DEFAULT_PRESSURE_PID_MAXERR      500
+#define SETTINGS_DEFAULT_PRESSURE_PID_MAXSUMERR   500
+#define SETTINGS_DEFAULT_PRESSURE_PID_MAXOUT      100
+#define SETTINGS_DEFAULT_PRESSURE_PID_MINOUT      -100
 
 //settings limits
-#define SETTINGS_RAMPUP_MIN			0
+#define SETTINGS_RAMPUP_MIN			  0
 //#define SETTINGS_RAMPUP_MIN			50
-#define SETTINGS_RAMPUP_MAX			200
+#define SETTINGS_RAMPUP_MAX			  200
 #define SETTINGS_INHALE_TIME_MIN	100
 #define SETTINGS_INHALE_TIME_MAX	2000
 #define SETTINGS_EXHALE_TIME_MIN	100
 #define SETTINGS_EXHALE_TIME_MAX	10000
-#define SETTINGS_VOLUME_MIN			100
-#define SETTINGS_VOLUME_MAX			1000
-//#define SETTINGS_BREATHING_R_MAX	20
-//#define SETTINGS_BREATHING_R_MIN	1
-#define SETTINGS_PEEP_MAX			200
-#define SETTINGS_PEEP_MIN			0
-#define SETTINGS_PRESSURE_MIN		10
-#define SETTINGS_PRESSURE_MAX		1000
-#define SETTINGS_PID_P_MIN			INT16_MIN
-#define SETTINGS_PID_P_MAX			INT16_MAX
-#define SETTINGS_PID_I_MIN			INT16_MIN
-#define SETTINGS_PID_I_MAX			INT16_MAX
-#define SETTINGS_PID_D_MIN			INT16_MIN
-#define SETTINGS_PID_D_MAX			INT16_MAX
-#define SETTINGS_MOTOR_POSITION_MIN	0
-#define SETTINGS_MOTOR_POSITION_MAX	1023
+#define SETTINGS_VOLUME_MIN			  100
+#define SETTINGS_VOLUME_MAX			  1000
+#define SETTINGS_PEEP_MAX			    200
+#define SETTINGS_PEEP_MIN			    0
+#define SETTINGS_PRESSURE_MIN		  10
+#define SETTINGS_PRESSURE_MAX		  1000
+#define SETTINGS_PID_P_MIN			  INT16_MIN
+#define SETTINGS_PID_P_MAX  			INT16_MAX
+#define SETTINGS_PID_I_MIN	  		INT16_MIN
+#define SETTINGS_PID_I_MAX		  	INT16_MAX
+#define SETTINGS_PID_D_MIN			  INT16_MIN
+#define SETTINGS_PID_D_MAX		  	INT16_MAX
+
+#define SETTINGS_PID_MAX_ERR_MIN        INT16_MIN
+#define SETTINGS_PID_MAX_ERR_MAX        INT16_MAX
+#define SETTINGS_PID_MAX_SUM_ERR_MIN    INT16_MIN
+#define SETTINGS_PID_MAX_SUM_ERR_MAX    INT16_MAX
+#define SETTINGS_PID_MAX_OUT_MIN        INT16_MIN
+#define SETTINGS_PID_MAX_OUT_MAX        INT16_MAX
+#define SETTINGS_PID_MIN_OUT_MIN        INT16_MIN
+#define SETTINGS_PID_MIN_OUT_MAX        INT16_MAX
+
+
+//PID Settings
+typedef struct F_PID_SETTINGS{
+  //! The Proportional tuning constant
+  float P_Factor;
+  //! The Integral tuning constant
+  float I_Factor;
+  //! The Derivative tuning constant
+  float D_Factor;
+  //! Maximum allowed error
+  float maxError;
+  //! Maximum allowed sum error
+  float maxSumError;
+  //! Maximum output
+  float maxOut;
+  //! Minimum output
+  float minOut;
+} fpidSettings_t;
 
 //Settings
 typedef struct RESPIRATOR_SETTINGS{
@@ -82,10 +111,11 @@ typedef struct RESPIRATOR_SETTINGS{
 	uint16_t PEEP;
 	uint16_t PeakInspPressure;
 	uint16_t target_pressure;
-	int16_t PID_P;
-	int16_t PID_I;
-	int16_t PID_D;
-	int16_t MOT_POS;
+	fpidSettings_t PID_Position;
+	fpidSettings_t PID_Pressure;
+  fpidSettings_t PID_Volume;
+  fpidSettings_t PID_Flow;
+  fpidSettings_t PID_Speed;
 } RespSettings_t;
 
 //Measured Parameters
@@ -120,14 +150,14 @@ typedef struct MEASURED_PARAMS{
 #define CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET				11
 #define CTRL_PAR_MODE_REGULATE_FLOW							12
 
-#define CTRL_PAR_MAX_POSITION	103
+#define CTRL_PAR_MAX_POSITION	100
 #define CTRL_PAR_MIN_POSITION	0
 
 typedef struct CONTROL_PARAMS{
 	uint8_t mode;		//regulate speed/position
 	float target_speed;	// max: +-100%
 	float target_position;	// max: +100%, 0 = completely exhaled, theoretically should not go below 0
-	float cur_speed;	// +-100
+	float cur_speed;	// %/ms (calculated from the current an last position)
 	float cur_position;	// 0-100
 	float last_position;	// 0-100
 	float max_speed;	// max: +-100%

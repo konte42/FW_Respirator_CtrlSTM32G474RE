@@ -228,15 +228,17 @@ ValidateAndApplyReceivedValue('R', value, Settings->target_Pramp_time,		SETTINGS
 ValidateAndApplyReceivedValue('I', value, Settings->target_inspiratory_time,SETTINGS_INHALE_TIME_MIN, SETTINGS_INHALE_TIME_MAX, ComRxInhaleTmOutsideLimits);
 ValidateAndApplyReceivedValue('E', value, Settings->target_expiratory_time,	SETTINGS_EXHALE_TIME_MIN, SETTINGS_EXHALE_TIME_MAX, ComRxExhaleTmOutsideLimits);
 ValidateAndApplyReceivedValue('V', value, Settings->target_volume,			SETTINGS_VOLUME_MIN, SETTINGS_VOLUME_MAX, ComRxVolumeOutsideLimits);
-//ValidateAndApplyReceivedValue('A', value, Settings->breathing_rate,			SETTINGS_BREATHING_R_MIN, SETTINGS_BREATHING_R_MAX, ComRxBreathingRateOtsideLimits);
 ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
 ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
 ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
 					
-ValidateAndApplyReceivedValue('1', value, Settings->PID_P,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
-ValidateAndApplyReceivedValue('2', value, Settings->PID_I,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
-ValidateAndApplyReceivedValue('3', value, Settings->PID_D,	SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
-ValidateAndApplyReceivedValue('4', value, Settings->MOT_POS,SETTINGS_MOTOR_POSITION_MIN, SETTINGS_MOTOR_POSITION_MAX, ComRxMOTPOSOutsideLimits);
+ValidateAndApplyReceivedValue('1', value, Settings->PID_Pressure.P_Factor,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
+ValidateAndApplyReceivedValue('2', value, Settings->PID_Pressure.I_Factor,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
+ValidateAndApplyReceivedValue('3', value, Settings->PID_Pressure.D_Factor,  SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
+ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,  SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
+ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
+ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
+ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,       SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
 				}
 				state = 0;
 				*newdata = 1;

@@ -10,9 +10,12 @@
 #define PID_H_
 
 #include <inttypes.h>
+#include "CommonDefinitions.h"
 #define SCALING_FACTOR  128
-#define SAMPLING_TIME	TIME_SLICE_MS
-
+#ifndef PID_SAMPLING_TIME
+#warning "PID Sampling time not set - using default of 1 ms"
+#define PID_SAMPLING_TIME	  1
+#endif
 
 typedef struct PID_DATA{
   //! Last process value, used to find derivative of process value.
@@ -59,11 +62,11 @@ typedef struct F_PID_DATA{
 #define TRUE            1
 
 void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, struct PID_DATA *pid);
-int16_t PID_Calculate(int samplingTime, int16_t setPoint, int16_t processValue, struct PID_DATA *pid_st);
+int16_t PID_Calculate(int16_t setPoint, int16_t processValue, struct PID_DATA *pid_st);
 void PID_Reset_Integrator(pidData_t *pid_st);
 void PID_Reset_Differenciator(pidData_t *pid_st);
 
-void PID_fInit(float p_factor, float i_factor, float d_factor, fpidData_t *pid);
+void PID_fInit(float p_factor, float i_factor, float d_factor, float MaxErr, float MaxSumErr, fpidData_t *pid);
 float PID_fCalculate(int samplingTime, float setPoint, float processValue, fpidData_t *pid_st);
 void PID_fReset_Integrator(fpidData_t *pid_st);
 void PID_fReset_Differenciator(fpidData_t *pid_st);

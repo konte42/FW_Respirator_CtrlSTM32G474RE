@@ -109,7 +109,7 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		Measured->volume_mode = VOLUME_RESET;
 		Control->BreathCounter++;
 		Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET;
-		Control->target_speed = 1000;
+		Control->target_speed = 100;  //100%
 		PreStartBoostTime =	23 - SETpramp_time/20;
 		timing=-PreStartBoostTime;
 

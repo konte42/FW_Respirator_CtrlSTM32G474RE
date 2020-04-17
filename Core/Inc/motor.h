@@ -46,7 +46,7 @@ typedef enum
 }MotorDir_t;
 
 void motor_Init();
-void motor_setSpeed(float speed);	//-100 - 100
+void motor_SetSpeed(float speed);	//-100 - 100
 void motor_SetDutyCycle(uint16_t dutyCycle);
 void motor_SetRawDutyCycle(uint16_t dutyCycle);
 void motor_SetDir(MotorDir_t direction);
