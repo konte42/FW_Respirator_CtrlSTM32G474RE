@@ -6,7 +6,7 @@
  */ 
 #include "ActuatorControl.h"
 
-int32_t FIR(int16_t new_x);
+//int32_t FIR(int16_t new_x);
 
 void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, pidData_t *PIDdata)
 {
@@ -218,7 +218,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 	}
 	Control->last_position = Control->cur_position;
 }
-
+/*
 int32_t FIR(int16_t new_x)
 {
 	const int32_t b[]={2, 6, 15, 30, 54, 87, 131, 186, 253, 332, 422, 521, 629, 743, 860, 978, 1093, 1202, 1303, 1393, 1468, 1526, 1566, 1586};
@@ -239,3 +239,4 @@ int32_t FIR(int16_t new_x)
 	
 	return (y>>15);
 }
+*/
