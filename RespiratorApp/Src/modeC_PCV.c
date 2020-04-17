@@ -10,9 +10,9 @@
 #include "Measure.h"
 #include "GPIO.h"
 
-#define PRESSURE_INCREMENT	0.1// cmH2O
+#define PRESSURE_INCREMENT	0.0001// cmH2O
 
-#define PRESSURE_CTRL_LOOP_THERSHOLD	50
+#define PRESSURE_CTRL_LOOP_THERSHOLD	5	//cmH2O
 
 #define MODE_STATE_FIRST_RUN				-1
 #define MODE_STATE_EXP_START				0
@@ -31,18 +31,17 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 	static int8_t dihanje_state = -1;
 	static int16_t timing;
 	
-	#define PRAMP_OFFSET	50
+	#define PRAMP_OFFSET	5	//cmH2O
 	
 	static uint16_t SETinsp_time;
 	static uint16_t SETexp_time;
-	static uint16_t SETpressure;
-	static uint16_t SET_PEEP;
-	static uint16_t MAXpressure;
-	static uint16_t MAXvolume;
+	static float SETpressure;
+	static float SET_PEEP;
+	static float MAXpressure;
+	static float MAXvolume;
 	static uint16_t SETpramp_time;
-	int16_t innertia_offset;
+	float innertia_offset;	//ml
 	static int16_t PreStartBoostTime;
-	int16_t MeasuredPressure = ((int32_t)Measured->pressure * PRESSURE_MAX_MMH2O)/PRESSURE_SPAN;
 	
 	Control->status = dihanje_state;	// shrani stanje dihanja
 	
@@ -57,9 +56,9 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		SETinsp_time = Settings->target_inspiratory_time;
 		SETexp_time = Settings->target_expiratory_time;
 		SETpramp_time = Settings->target_Pramp_time;
-		SET_PEEP = Settings->PEEP;
-		SETpressure = Settings->target_pressure;
-		MAXpressure = Settings->PeakInspPressure;
+		SET_PEEP = Settings->PEEP/10.0;
+		SETpressure = Settings->target_pressure/10.0;
+		MAXpressure = Settings->PeakInspPressure/10.0;
 		MAXvolume = Settings->target_volume;
 		dihanje_state=MODE_STATE_EXP_START;
 		break;
@@ -77,7 +76,6 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		timing += TIME_SLICE_MS;
 		if (Control->mode == CTRL_PAR_MODE_STOP)
 		{
-			//reload settings, pid parameters, reset stuff,...
 			dihanje_state=MODE_STATE_EXP_WAIT;
 		}
 		break;
@@ -101,8 +99,9 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		SETinsp_time = Settings->target_inspiratory_time;
 		SETexp_time = Settings->target_expiratory_time;
 		SETpramp_time = Settings->target_Pramp_time;
-		SETpressure = Settings->target_pressure;
-		MAXpressure = Settings->PeakInspPressure;
+		SET_PEEP = Settings->PEEP/10.0;
+		SETpressure = Settings->target_pressure/10.0;
+		MAXpressure = Settings->PeakInspPressure/10.0;
 		MAXvolume = Settings->target_volume;
 		//PID values reload every time control mode changes
 		
@@ -115,9 +114,6 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		timing=-PreStartBoostTime;
 
 		dihanje_state=MODE_STATE_INSP_PREP;
-		//comment-out the next 2 lines when P-ramp is finished
-		//Control->target_pressure = ((int32_t)pressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - insp_time*PRESSURE_INCREMENT;
-		//dihanje_state++;
 		break;
 		
 		case MODE_STATE_INSP_PREP: //pre-start (get the motor going)
@@ -126,16 +122,16 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		if (timing >= 0)
 		{
 			Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
-			Control->target_pressure = ((int32_t)(SET_PEEP+PRAMP_OFFSET) * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O;
+			Control->target_pressure = SET_PEEP+PRAMP_OFFSET;
 			dihanje_state=MODE_STATE_INSP_PRAMP;
 			SETexp_time = SETexp_time - PreStartBoostTime;
 			timing=0;
 			//LED4_On();
 		}
-		if (MeasuredPressure > SETpressure)
+		if (Measured->pressure > SETpressure)
 		{
 			Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
-			Control->target_pressure = ((int32_t)SETpressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+			Control->target_pressure = SETpressure - SETinsp_time*PRESSURE_INCREMENT;
 			//LED2_On();
 			SETexp_time = SETexp_time - (PreStartBoostTime + timing);
 			timing = 0;
@@ -146,10 +142,10 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		case MODE_STATE_INSP_PRAMP: //P-ramp
 		//LED1_On();
 		timing += TIME_SLICE_MS;
-		Control->target_pressure = ((((SETpressure-SET_PEEP-PRAMP_OFFSET)*(int32_t)timing)/SETpramp_time + SET_PEEP+PRAMP_OFFSET) * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+		Control->target_pressure = (((SETpressure-SET_PEEP-PRAMP_OFFSET)*timing)/SETpramp_time + SET_PEEP+PRAMP_OFFSET) - SETinsp_time*PRESSURE_INCREMENT;
 		if (timing >= SETpramp_time)	// gremo v constant pressure
 		{
-			Control->target_pressure = ((int32_t)SETpressure * PRESSURE_SPAN) / PRESSURE_MAX_MMH2O - SETinsp_time*PRESSURE_INCREMENT;
+			Control->target_pressure = SETpressure - SETinsp_time*PRESSURE_INCREMENT;
 			dihanje_state=MODE_STATE_INSP_CONST_P;
 		}
 		break;
@@ -165,11 +161,11 @@ void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		}
 		//Alternate condition - max volume reached. Should probably issue a warning
 		innertia_offset = 0;//((int32_t)Measured->flow*3)/4;	//ml
-		if (Measured->volume_t > MAXvolume*10 - innertia_offset*10)
+		if (Measured->volume_t > MAXvolume - innertia_offset)
 		{
 			dihanje_state = MODE_STATE_INSP_MAX_VOL;
 		}
-		if (MeasuredPressure > MAXpressure)
+		if (Measured->pressure > MAXpressure)
 		{
 			dihanje_state = MODE_STATE_INSP_MAX_PRESSURE;
 		}
