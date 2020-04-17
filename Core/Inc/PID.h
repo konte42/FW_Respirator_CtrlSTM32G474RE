@@ -10,12 +10,13 @@
 #define PID_H_
 
 #include <inttypes.h>
-
 #define SCALING_FACTOR  128
+#define SAMPLING_TIME	TIME_SLICE_MS
+
 
 typedef struct PID_DATA{
   //! Last process value, used to find derivative of process value.
-  int16_t lastProcessValue;
+  int16_t lastError;
   //! Summation of errors, used for integrate calculations
   int32_t sumError;
   //! The Proportional tuning constant, multiplied with SCALING_FACTOR
@@ -30,6 +31,23 @@ typedef struct PID_DATA{
   int32_t maxSumError;
 } pidData_t;
 
+typedef struct F_PID_DATA{
+  //! Last process value, used to find derivative of process value.
+  float lastError;
+  //! Summation of errors, used for integrate calculations
+  float sumError;
+  //! The Proportional tuning constant
+  float P_Factor;
+  //! The Integral tuning constant
+  float I_Factor;
+  //! The Derivative tuning constant
+  float D_Factor;
+  //! Maximum allowed error, avoid runaway
+  float maxError;
+  //! Maximum allowed sum error, avoid runaway
+  float maxSumError;
+} fpidData_t;
+
 
 // Maximum value of variables
 #define MAX_INT         INT16_MAX
@@ -41,10 +59,15 @@ typedef struct PID_DATA{
 #define TRUE            1
 
 void PID_Init(int16_t p_factor, int16_t i_factor, int16_t d_factor, struct PID_DATA *pid);
-int16_t PID_Calculate(int16_t setPoint, int16_t processValue, struct PID_DATA *pid_st);
+int16_t PID_Calculate(int samplingTime, int16_t setPoint, int16_t processValue, struct PID_DATA *pid_st);
 void PID_Reset_Integrator(pidData_t *pid_st);
+void PID_Reset_Differenciator(pidData_t *pid_st);
 
-
+void PID_fInit(float p_factor, float i_factor, float d_factor, fpidData_t *pid);
+float PID_fCalculate(int samplingTime, float setPoint, float processValue, fpidData_t *pid_st);
+void PID_fReset_Integrator(fpidData_t *pid_st);
+void PID_fReset_Differenciator(fpidData_t *pid_st);
+void PID_fReset(fpidData_t *pid_st);
 
 
 #endif /* PID_H_ */
