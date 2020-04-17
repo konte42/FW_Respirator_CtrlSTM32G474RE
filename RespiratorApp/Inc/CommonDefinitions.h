@@ -98,9 +98,9 @@ typedef enum
 } MeasureVolumeMode_t;
 
 typedef struct MEASURED_PARAMS{
-	float flow;
-	float pressure;
-	float volume_t;
+	float flow;							// l/min
+	float pressure;						// cmH2O (=mbar)
+	float volume_t;						// ml/b  (=ml/vdih)
 	MeasureVolumeMode_t volume_mode;
 } MeasuredParams_t;
 
