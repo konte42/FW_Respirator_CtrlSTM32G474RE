@@ -11,6 +11,7 @@
 #include "Measure.h"
 #include "GPIO.h"
 
+#define PRESSURE_INCREMENT	0.1// cmH2O
 #if 0
 
 #define PRESSURE_CTRL_LOOP_THERSHOLD	50
