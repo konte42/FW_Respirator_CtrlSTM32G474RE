@@ -24,7 +24,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 	static int8_t MODE_STATE = MODE_STATE_FIRST_RUN;
 	static int16_t timing;
 	
-	#define PRAMP_OFFSET	50
+	#define PRAMP_OFFSET	5	//cmH2O
 	
 	static uint16_t SETinsp_time;
 	static uint16_t SETexp_time;
@@ -87,7 +87,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			//start cycle
 			Measured->volume_mode = VOLUME_RESET;
 			Control->BreathCounter++;
-			Control->target_speed = 1000;
+			Control->target_speed = 100;
 			Control->mode=CTRL_PAR_MODE_TARGET_SPEED;
 			MODE_STATE=MODE_STATE_INSP;
 			timing = 0;
