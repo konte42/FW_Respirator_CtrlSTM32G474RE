@@ -37,12 +37,12 @@ void MeasureFlow(MeasuredParams_t* Measured)
 
 void MeasurePressure(MeasuredParams_t* Measured)
 {
-	float pressure;
+	int32_t pressure;
 	uint16_t *ADC_Results;
 	
 	ADC_Results=ADC_results_p();
 	
-	pressure = *(ADC_Results+ADC_CH_PRESSURE) - PRESSURE_MIN;
+	pressure = (int32_t)(*(ADC_Results+ADC_CH_PRESSURE)) - PRESSURE_MIN;
 	if (pressure<PRESSURE_ZERO_TRESHOLD && pressure>-PRESSURE_ZERO_TRESHOLD) pressure = 0;
 	
 	Measured->pressure=(float)pressure/(float)PRESSURE_SPAN * (float)PRESSURE_MAX_CMH2O;

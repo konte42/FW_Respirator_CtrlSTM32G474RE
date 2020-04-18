@@ -67,6 +67,10 @@ void SystemClock_Config(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+//Global only for debugging purposes move back to main when done
+RespSettings_t  Settings;
+MeasuredParams_t Measured;
+CtrlParams_t Control;
 fpidData_t PIDdata;
 /* USER CODE END 0 */
 
@@ -76,8 +80,9 @@ fpidData_t PIDdata;
   */
 int main(void)
 {
+#define MSG_SETTINGS_REPLY_LENGTH 200
   /* USER CODE BEGIN 1 */
-	  char msg[50];
+	  char msg[MSG_SETTINGS_REPLY_LENGTH];
 	  int length;
 	  char com_data;
 	#ifdef AVR
@@ -86,12 +91,13 @@ int main(void)
 	  uint32_t mark2=0;
 	  uint8_t newSettingsReceived;
 
+	  /*
 	  RespSettings_t	Settings;
 	  MeasuredParams_t Measured;
 	  CtrlParams_t Control;
-//	  fpidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
+	  fpidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
 						  //Maybe make PID params local to ActuatorControl?
-
+*/
 	  memset(&Settings,0,sizeof(RespSettings_t));
 	  memset(&Measured,0,sizeof(MeasuredParams_t));
 	  memset(&Control,0,sizeof(CtrlParams_t));
@@ -278,7 +284,7 @@ int main(void)
     if (newSettingsReceived)
     {
 	    newSettingsReceived = 0;
-	    length=ReportAllCurrentSettings(msg,50,&Settings);
+	    length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
 	    if (length > 0)
 	    {
 		    //LED2_On();

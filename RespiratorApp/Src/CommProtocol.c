@@ -86,8 +86,8 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 
 int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settings)
 {
-	int length = sizeof(RespSettings_t)+3;
-	if (MAX_LENGTH >= (sizeof(RespSettings_t)+3) )
+  int length = sizeof(RespSettings_t)+3;
+  if (MAX_LENGTH >= (sizeof(RespSettings_t)+3) )
 	{
 		*p_msg = 0x56;
 		p_msg++;
@@ -95,7 +95,7 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 		*p_msg = length-3;
 		p_msg++;
 
-		memcpy(p_msg,Settings,sizeof(RespSettings_t));
+		memcpy(p_msg,Settings,24);
 		
 		p_msg+=sizeof(RespSettings_t);
 		*p_msg = 0xAA;

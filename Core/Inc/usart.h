@@ -37,7 +37,7 @@ extern UART_HandleTypeDef huart1;
 /*
 FTDI231x Baud rate limitations:
 Baud Rate = 3000000 / (n + x)
-where �?n’ can be any integer between 2 and 16,384 ( = 214 ) and �?x’ can be a sub-integer of the value 0,
+where �?n’ can be any integer between 2 and 16,384 ( = 214 ) and �?x’ can be a sub-integer of the value 0,
 0.125, 0.25, 0.375, 0.5, 0.625, 0.75, or 0.875. When n = 1, x = 0, i.e. baud rate divisors with values
 between 1 and 2 are not possible.
 
@@ -45,7 +45,7 @@ STM32G4 baud rate limitations: BRR=SysClk/Baudrate
 */
 
 /*Spremeni glede na velikost podatkov*/
-#define UART_BUFFER_SIZE 128
+#define UART_BUFFER_SIZE 1024
 
 typedef struct
 {

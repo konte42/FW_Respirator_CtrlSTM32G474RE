@@ -137,7 +137,7 @@ void motor_SetDutyCycle(uint16_t dutyCycle)
 
 float motor_GetPosition()	//0 - 100 = normal open - normal closed
 {
-	float raw=*(ADC_results_p()+ADC_CH_POSITION);
+	int32_t raw=*(ADC_results_p()+ADC_CH_POSITION);
 	return (float)(MOTOR_POS_RAW_OPEN-raw)/(float)(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED)*100.0 ;
 }
 

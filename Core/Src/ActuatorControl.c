@@ -8,13 +8,13 @@
 
 //int32_t FIR(int16_t new_x);
 
-
+  float motorSpeed;
 //TODO: every time control mode is changed, PID must be reset and loaded with appropriate parameters
 void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, fpidData_t *PIDdata)
 {
 //  static uint8_t last_mode = CTRL_PAR_MODE_STOP;
 //  uint8_t cur_mode = Control->mode;
-  float motorSpeed;
+
 	Control->cur_position = motor_GetPosition();
 	Control->cur_speed = (Control->cur_position - Control->last_position) / TIME_SLICE_MS;
 	
@@ -124,14 +124,14 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 			//DO NOT PUT BREAK HERE!
 
 		case CTRL_PAR_MODE_REGULATE_PRESSURE:
-			//can only regulate inspiration		//pressure span 50mmH2O --> cca 14500 (14500/16 = cca 900)
+			//can only regulate inspiration		//pressure span 50mmH2O
 		  motorSpeed = PID_fCalculate(1,Control->target_pressure, Measured->pressure, PIDdata);
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
 			{
 				motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
 			if (motorSpeed < 0) motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
-			motor_SetDutyCycle(motorSpeed);	
+			motor_SetSpeed(motorSpeed);
 		break;
 
 // VOLUME REGULATION MODES ///////////////////////////////////////////////////////////
@@ -153,7 +153,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
         motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
 			if (motorSpeed<0) motorSpeed = 0.01;
-			motor_SetDutyCycle(motorSpeed);
+			motor_SetSpeed(motorSpeed);
 		break;
 
 // FLOW REGULATION MODES ///////////////////////////////////////////////////////////
@@ -175,7 +175,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
         motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
       if (motorSpeed<0) motorSpeed = 0.01;
-      motor_SetDutyCycle(motorSpeed);
+      motor_SetSpeed(motorSpeed);
 		break;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -183,7 +183,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 		default: //Error: Stop immediately
 		ReportError(ActuatorCtrlUnknownMode,NULL/*"Unknown actuator control mode"*/);
 		Control->mode=CTRL_PAR_MODE_TARGET_POSITION;
-		motor_SetDutyCycle(0);
+		motor_SetSpeed(0);
 		break;
 	}
 
