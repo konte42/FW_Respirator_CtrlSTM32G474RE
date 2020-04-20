@@ -286,6 +286,7 @@ UART_Status_t UART0_put(const char c)
 			_tx_buffer->buffer[_tx_buffer->head] = (uint8_t)c;
 			_tx_buffer->head = i;
 			_tx_buffer->count++;
+			LED7_On();
 			__HAL_UART_ENABLE_IT(&UART0, UART_IT_TXE); // Omogočimo UART transmission interrupt
 		}
 		return UART_OK;
@@ -350,6 +351,7 @@ void UART_ISR(UART_HandleTypeDef *huart)
     	    {
     	      // Buffer empty, so disable interrupts
     	      __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
+    	      LED7_Off();
 
     	    }
 
