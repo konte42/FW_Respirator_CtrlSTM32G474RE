@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
+#include <modeCMV.h>
+#include <modePCV.h>
 #include "main.h"
 #include "adc.h"
 #include "usart.h"
@@ -33,8 +35,6 @@
 #include "Measure.h"
 #include "ActuatorControl.h"
 #include "CommProtocol.h"
-#include "modeC_PCV.h"
-#include "modeC_VCV.h"
 #include "modeSTOP.h"
 #include "modeHWtest.h"
 /* USER CODE END Includes */
@@ -214,23 +214,15 @@ int main(void)
           modeSTOP(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
-        case MODE_C_VCV:
-          modeC_VCV(&Settings, &Measured, &Control);
+        case MODE_CMV:
+          modeCMV(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
-        case MODE_C_PCV:
-          modeC_PCV(&Settings, &Measured, &Control);
+        case MODE_PCV:
+          modePCV(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
-        case MODE_AC_VCV:
-          modeSTOP(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
-          break;
-        case MODE_AC_PCV:
-          modeSTOP(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
-          break;
-        case MODE_CPAP:
+        case MODE_CPAP_PS:
           modeSTOP(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
@@ -263,7 +255,11 @@ int main(void)
     {
       //LED6_Tgl();
       mark2+=STATUS_REPORTING_PERIOD;
-      length=PrepareStatusMessage(HAL_GetTick(), (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0), (int16_t)(Measured.volume_t*10.0), (int16_t)(motor_GetPosition()), (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter, Control.status, Control.Error, msg);
+      length=PrepareStatusMessage(HAL_GetTick(),
+           (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0),
+           (int16_t)(Measured.volume_t*10.0), (int16_t)(motor_GetPosition()),
+           (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter,
+           Control.status, Control.Error, Control.target_pressure, msg);
       UART0_SendBytes(msg,length);
       if (timeout > 0 )
       {
