@@ -9,12 +9,14 @@
 //int32_t FIR(int16_t new_x);
 
   float motorSpeed;
+  float motorCurrent;
 //TODO: every time control mode is changed, PID must be reset and loaded with appropriate parameters
 void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, fpidData_t *PIDdata)
 {
 //  static uint8_t last_mode = CTRL_PAR_MODE_STOP;
 //  uint8_t cur_mode = Control->mode;
 
+  motorCurrent=motor_GetCurrent();
 	Control->cur_position = motor_GetPosition();
 	Control->cur_speed = (Control->cur_position - Control->last_position) / TIME_SLICE_MS;
 	
