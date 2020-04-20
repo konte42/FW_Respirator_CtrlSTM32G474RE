@@ -47,12 +47,12 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 		case MODE_STATE_EXP_START: // zacetek vdiha, preveri, ce so klesce narazen, sicer jih daj narazen
 			Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
 			Control->target_position  = 0;
-			LED1_On();
+			//LED1_On();
 			timing=0;
 			MODE_STATE=MODE_STATE_EXP_ZERO_POS_WAIT;
-			LED2_Off();
-			LED3_Off();
-			LED4_Off();
+			//LED2_Off();
+			//LED3_Off();
+			//LED4_Off();
 		break;
 		
 		case MODE_STATE_EXP_ZERO_POS_WAIT: // cakaj, da so klesce narazen
@@ -103,7 +103,7 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 				Control->mode=CTRL_PAR_MODE_STOP;
 				MODE_STATE=MODE_STATE_EXP_START;
 			}
-			LED1_Off();
+			//LED1_Off();
 			//Errors:
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
 			{
