@@ -40,8 +40,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
 	  else ADCstage=1;
 	  if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
-	  else 			ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
-	  ADC_complete=1;
+	  else
+    {
+      ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
+      ADC_complete=1;
+    }
   }
   else if (hadc->Instance == ADC3)
   {
