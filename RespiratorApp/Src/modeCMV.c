@@ -7,7 +7,7 @@
 //Opisi mode, da vemo kaj pocnemo
 
 //Pri lovljenju ustreznega volumna ima prednost �AS (Target inspiratory time)
-#include "modeC_VCV.h"
+#include <modeCMV.h>
 #include "Measure.h"
 #include "GPIO.h"
 
@@ -28,7 +28,7 @@
 #define MODE_STATE_INSP_MAX_POS				8
 #define MODE_STATE_INSP_MAX_PRESSURE		9
 
-void modeC_VCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
+void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
 	static int8_t dihanje_state = -1;
 	static int16_t timing;
@@ -218,7 +218,7 @@ void modeC_VCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 	}
 }
 #else
-void modeC_VCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
+void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
 	static uint8_t	pass_number = 0;
 	static int8_t dihanje_state = -1;
@@ -289,7 +289,7 @@ void modeC_VCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_
 		
 		case 3: //start inspiratory cycle
 		//Reload all settings, if needed change mode, etc.
-		if (Settings->new_mode != MODE_C_VCV)
+		if (Settings->new_mode != MODE_CMV)
 		{
 			Settings->current_mode = Settings->new_mode;
 			dihanje_state = -1;

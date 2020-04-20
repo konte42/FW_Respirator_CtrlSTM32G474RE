@@ -12,6 +12,6 @@
 #include "CommonDefinitions.h"
 #include "ErrorHandling.h"
 
-void modeC_PCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control);
+void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control);
 
 #endif /* MODEC_PCV_H_ */

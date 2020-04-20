@@ -12,6 +12,6 @@
 #include "CommonDefinitions.h"
 #include "ErrorHandling.h"
 
-void modeC_VCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control);
+void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control);
 
 #endif /* MODEVCV_H_ */
