@@ -40,7 +40,7 @@ void ValidateAndApplyReceivedValue(int32_t value, void* setting, eParamType_t ty
 }*/
 
 int PrepareStatusMessage(uint32_t timestamp, int16_t Flow, int16_t Pressure, int16_t Volume, int16_t MotorPosition, \
-int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t Status, uint8_t Error, char *p_msg)
+int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t Status, uint8_t Error, float target_value, char *p_msg)
 {
 	//STX+N+TIMESTAMP+4xADC+ETX
 	*p_msg = 0x55;
@@ -79,6 +79,9 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 	*(uint8_t *)p_msg = Error;
 	p_msg +=1;
 	
+	*(float *)p_msg = target_value;
+  p_msg +=4;
+
 	*(p_msg) = 0xAA;
 
 	return (1+1+MSG_CORE_LENGTH+1);
@@ -86,8 +89,9 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 
 int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settings)
 {
-  int length = sizeof(RespSettings_t)+3;
-  if (MAX_LENGTH >= (sizeof(RespSettings_t)+3) )
+//  int length = sizeof(RespSettings_t)+3;
+  int length = 16+3;
+  if (MAX_LENGTH >= length)
 	{
 		*p_msg = 0x56;
 		p_msg++;
@@ -95,9 +99,9 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 		*p_msg = length-3;
 		p_msg++;
 
-		memcpy(p_msg,Settings,24);
+		memcpy(p_msg,Settings,length);
 		
-		p_msg+=sizeof(RespSettings_t);
+		p_msg+=length-3;
 		*p_msg = 0xAA;
 	}
 	else
@@ -232,9 +236,9 @@ ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					SETTINGS_PEEP_MIN,
 ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
 ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
 					
-ValidateAndApplyReceivedValue('1', value, Settings->PID_Pressure.P_Factor,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
-ValidateAndApplyReceivedValue('2', value, Settings->PID_Pressure.I_Factor,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
-ValidateAndApplyReceivedValue('3', value, Settings->PID_Pressure.D_Factor,  SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
+ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
+ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
+ValidateAndApplyReceivedValue('3', value/100.0, Settings->PID_Pressure.D_Factor,  SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
 ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,  SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
 ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
 ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
