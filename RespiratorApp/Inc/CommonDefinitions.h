@@ -15,7 +15,7 @@
 #include "PID.h"  //PID_SAMPLING_TIME must be defined before including "PID.h"
 
 //app defines
-#define MSG_CORE_LENGTH	20
+#define MSG_CORE_LENGTH	24
 #ifdef AVR
 #define TIME_SLICE_MS	2	//Timeslice in ms
 #else
@@ -23,14 +23,12 @@
 #endif
 #define STATUS_REPORTING_PERIOD	10	// ms
 
-#define MODE_DEFAULT	0	//Kateri je default?
-#define MODE_STOP	0
-#define MODE_C_VCV	1		
-#define MODE_C_PCV	2
-#define MODE_AC_VCV	3
-#define MODE_AC_PCV	4
-#define MODE_CPAP	5
-#define MODE_HW_TEST	6
+#define MODE_DEFAULT	2	//Kateri je default?
+#define MODE_STOP	    0
+#define MODE_CMV	    1
+#define MODE_PCV	    2
+#define MODE_CPAP_PS	3
+#define MODE_HW_TEST	4
 
 //default settings
 #define SETTINGS_DEFAULT_MODE					MODE_DEFAULT
@@ -42,17 +40,17 @@
 #define SETTINGS_DEFAULT_PEEP					50		// mmH2O
 #define SETTINGS_DEFAULT_TARGET_VOLUME_ML		400		// milliliters
 
-#define SETTINGS_DEFAULT_PRESSURE_PID_P	        	1 //64	// = P/SCALING_FACTOR = 0.5
-#define SETTINGS_DEFAULT_PRESSURE_PID_I       		50 //1	// = I/SCALING_FACTOR
-#define SETTINGS_DEFAULT_PRESSURE_PID_D           1 // = D/SCALING_FACTOR
+#define SETTINGS_DEFAULT_PRESSURE_PID_P	        	2 //64	// = P/SCALING_FACTOR = 0.5
+#define SETTINGS_DEFAULT_PRESSURE_PID_I       		30 //1	// = I/SCALING_FACTOR
+#define SETTINGS_DEFAULT_PRESSURE_PID_D           0.05 // = D/SCALING_FACTOR
 #define SETTINGS_DEFAULT_PRESSURE_PID_MAXERR      500
 #define SETTINGS_DEFAULT_PRESSURE_PID_MAXSUMERR   500
 #define SETTINGS_DEFAULT_PRESSURE_PID_MAXOUT      100
 #define SETTINGS_DEFAULT_PRESSURE_PID_MINOUT      -100
 
 //settings limits
-#define SETTINGS_RAMPUP_MIN			  0
-//#define SETTINGS_RAMPUP_MIN			50
+//#define SETTINGS_RAMPUP_MIN			  0
+#define SETTINGS_RAMPUP_MIN			  50
 #define SETTINGS_RAMPUP_MAX			  200
 #define SETTINGS_INHALE_TIME_MIN	100
 #define SETTINGS_INHALE_TIME_MAX	2000
@@ -64,12 +62,12 @@
 #define SETTINGS_PEEP_MIN			    0
 #define SETTINGS_PRESSURE_MIN		  10
 #define SETTINGS_PRESSURE_MAX		  1000
-#define SETTINGS_PID_P_MIN			  INT16_MIN
-#define SETTINGS_PID_P_MAX  			INT16_MAX
-#define SETTINGS_PID_I_MIN	  		INT16_MIN
-#define SETTINGS_PID_I_MAX		  	INT16_MAX
-#define SETTINGS_PID_D_MIN			  INT16_MIN
-#define SETTINGS_PID_D_MAX		  	INT16_MAX
+#define SETTINGS_PID_P_MIN			  0
+#define SETTINGS_PID_P_MAX  			UINT16_MAX
+#define SETTINGS_PID_I_MIN	  		0
+#define SETTINGS_PID_I_MAX		  	UINT16_MAX
+#define SETTINGS_PID_D_MIN			  0
+#define SETTINGS_PID_D_MAX		  	UINT16_MAX
 
 #define SETTINGS_PID_MAX_ERR_MIN        INT16_MIN
 #define SETTINGS_PID_MAX_ERR_MAX        INT16_MAX
