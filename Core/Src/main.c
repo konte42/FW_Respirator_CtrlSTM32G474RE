@@ -19,9 +19,6 @@
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
-#include <modeCMV.h>
-#include <modePCV.h>
-#include "modeCPAP_PS.h"
 #include "main.h"
 #include "adc.h"
 #include "usart.h"
@@ -36,6 +33,9 @@
 #include "Measure.h"
 #include "ActuatorControl.h"
 #include "CommProtocol.h"
+#include "modeCMV.h"
+#include "modePCV.h"
+#include "modeCPAP_PS.h"
 #include "modeSTOP.h"
 #include "modeHWtest.h"
 /* USER CODE END Includes */
@@ -73,6 +73,12 @@ RespSettings_t  Settings;
 MeasuredParams_t Measured;
 CtrlParams_t Control;
 fpidData_t PIDdata;
+
+int _write(int file, char *ptr, int len)
+{
+  HAL_UART_Transmit_IT(&hlpuart1, (uint8_t*)ptr, len);
+  return UART_OK;
+}
 /* USER CODE END 0 */
 
 /**
@@ -81,15 +87,16 @@ fpidData_t PIDdata;
   */
 int main(void)
 {
-#define MSG_SETTINGS_REPLY_LENGTH 200
   /* USER CODE BEGIN 1 */
+#define MSG_SETTINGS_REPLY_LENGTH 200
+
 	  char msg[MSG_SETTINGS_REPLY_LENGTH];
 	  int length;
 	  char com_data;
 	#ifdef AVR
 	  uint32_t mark1=0;
 	#endif
-	  uint32_t mark2=0;
+    uint32_t mark2=0;
 	  uint8_t newSettingsReceived;
 
 	  /*
@@ -110,9 +117,9 @@ int main(void)
 	  Settings.current_mode=MODE_DEFAULT;
 	  Settings.new_mode=MODE_DEFAULT;
 	  Settings.target_Pramp_time=SETTINGS_DEFAULT_RAMPUP_TIME_MS;
-	  Settings.target_inspiratory_time=SETTINGS_DEFAULT_INHALE_TIME_MS;
-	  Settings.target_expiratory_time=SETTINGS_DEFAULT_EXHALE_TIME_MS;
-	  Settings.target_volume=SETTINGS_DEFAULT_TARGET_VOLUME_ML;
+	  Settings.target_inspiria_time=SETTINGS_DEFAULT_INHALE_TIME_MS;
+	  Settings.target_expiria_time=SETTINGS_DEFAULT_EXHALE_TIME_MS;
+	  Settings.target_tidal_volume=SETTINGS_DEFAULT_TARGET_VOLUME_ML;
 	  Settings.PEEP = SETTINGS_DEFAULT_PEEP;
 	  Settings.PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
     Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
@@ -125,9 +132,13 @@ int main(void)
     Settings.PID_Pressure.maxOut = SETTINGS_DEFAULT_PRESSURE_PID_MAXOUT;
     Settings.PID_Pressure.minOut = SETTINGS_DEFAULT_PRESSURE_PID_MINOUT;
 
-//	  Settings.PID_P = SETTINGS_DEFAULT_PID_P;
-//	  Settings.PID_I = SETTINGS_DEFAULT_PID_I;
-//	  Settings.PID_D = SETTINGS_DEFAULT_PID_D;
+    Settings.PID_Flow.P_Factor = SETTINGS_DEFAULT_FLOW_PID_P;
+    Settings.PID_Flow.I_Factor = SETTINGS_DEFAULT_FLOW_PID_I;
+    Settings.PID_Flow.D_Factor = SETTINGS_DEFAULT_FLOW_PID_D;
+    Settings.PID_Flow.maxError = SETTINGS_DEFAULT_FLOW_PID_MAXERR;
+    Settings.PID_Flow.maxSumError = SETTINGS_DEFAULT_FLOW_PID_MAXSUMERR;
+    Settings.PID_Flow.maxOut = SETTINGS_DEFAULT_FLOW_PID_MAXOUT;
+    Settings.PID_Flow.minOut = SETTINGS_DEFAULT_FLOW_PID_MINOUT;
 
 	  //TODO: read current state of the machine
 	  //Is it possible the get the exact state?
@@ -196,7 +207,6 @@ int main(void)
       UART0_put(data);
     }
   }*/
-  int timeout=0;
   while(1)
   {
     // na 2 ms
@@ -262,17 +272,9 @@ int main(void)
            (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter,
            Control.status, Control.Error, Control.target_pressure, msg);
       UART0_SendBytes(msg,length);
-      if (timeout > 0 )
-      {
-	timeout --;
-      }
-      else
-      {
-	//LED2_Off();
-      }
     }
-    //Listen for commands
 
+    //Listen for commands
     if(UART0_DataReady())	//process received data 1 byte per loop
     {
 	    UART0_GetByte(&com_data);
@@ -284,12 +286,9 @@ int main(void)
 	    length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
 	    if (length > 0)
 	    {
-		    //LED2_On();
-		    timeout=20;
 		    UART0_SendBytes(msg,length);
 	    }
     }
-
 
     /* USER CODE END WHILE */
 
