@@ -7,7 +7,7 @@
 #include "CommProtocol.h"
 
 #define ValidateAndApplyReceivedValue(typ, value, setting, min, max, err) \
-case typ: if ((value >= min ) && (value <= max ) ) {setting = value;} else {ReportError(err, NULL/*""*/);} break
+case typ: if ((value >= min ) && (value <= max ) ) {setting = value;} else {ReportError(err, FSH(""));} break
 /*
 typedef enum
 {
@@ -117,13 +117,25 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 //STX = '>'
 //ETX = '\n'
 //PARAM:
-//	'M' = mode ('0'-stop, 'V'-VCV, 'P'-PCV, 'C'-CPAP)
-//	'R' = rampup (50 - 200) ms
-//  'I' = inspiratory time (???) ms
-//	'E' = expiratory time (???) ms
-//	'V' = volume (100-1000) ml
-//  'G' = Inhale Trigger pressure
-//  'H' = ETS
+//	'M' = mode
+//	'R' = rampup
+//  'I' = inspiria time (ms)
+//	'E' = expiria time (ms)
+//  'P' = PEEP
+//  'T' = PeakInspiratory Pressure
+//  't' = Min Pressure ????
+//  'S' = Target Pressure
+//	'V' = volume (ml)
+//  'G' = Inhale Trigger pressure (mmH2O)
+//  'H' = ETS (%)
+//  'A' = Apnea time limit
+//  'd' = Min Vt
+//  'D' = Max Vt
+//  'c' = Min minute Volume
+//  'C' = Max minute Volume
+//  'b' = Min breath rate
+//  'B' = Max breath rate
+//  '' =
 //Example:
 //>M V\n
 
@@ -150,13 +162,20 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 				case 'R':
 				case 'I':
 				case 'E':
-				case 'V':	//known parameter
-//				case 'A':	//calculated from I and E
 				case 'P':
-				case 'T':
+        case 'T':
+        case 't':
 				case 'S':
-				case 'G':
+        case 'V':
+        case 'G':
 				case 'H':
+        case 'A':
+        case 'd':
+        case 'D':
+        case 'c':
+        case 'C':
+        case 'b':
+        case 'B':
 				case '1':
 				case '2':
 				case '3':
@@ -167,7 +186,7 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 					break;
 				}
 				default:{
-					ReportError(ComRxUnknownParameter,NULL/*"Received unknown parameter"*/);
+					ReportError(ComRxUnknownParameter,FSH("Received unknown parameter"));
 					param=0;
 					state=0;
 					break;
@@ -178,7 +197,7 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 		case 2: {//Waiting for space
 			if (data == ' ') state++;
 			else{
-				ReportError(ComRxNoSpaceAfterParam,NULL/*"Space missing after parameter"*/);
+				ReportError(ComRxNoSpaceAfterParam,FSH("Space missing after parameter"));
 				state=0;
 			}
 			break;
@@ -191,33 +210,27 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 			{
 				switch (data)
 				{
-					/*case '0': value = MODE_STOP; state++; break;
-					case 'V': value = MODE_C_VCV; state++; break;
-					case 'P': value = MODE_C_PCV; state++; break;
-					case 'C': value = MODE_CPAP; state++; break;
-*/					case '0': 
+					case '0':
 					case '1': 
 					case '2': 
 					case '3':
 					case '4':
-					case '5':
-					case '6':
 						value = data-'0';
 						state++;
 						break;
 					default:
-					ReportError(ComRxUnknownMode,NULL/*"Unknown mode received"*/);
+					ReportError(ComRxUnknownMode,FSH("Unknown mode received"));
 					state = 0;
 					break;
 				}
 				break;
 			}
 			else	//Parameters with ASCII numerical value:
-			{		// R, I, E, V, A, P, T, G, H, 1, 2, 3, 4
+			{		// R, I, E, V, P, T, G, H, 1, 2, 3, 4
 				if (data >= '0' && data <= '9'){ value=value*10+data-'0'; break;}
 				else if (data == '\n') {state++;}	// !DO NOT BREAK HERE AS THE LAST CHAR IS ETX!
 				else {
-					ReportError(ComRxExpectingNumber,NULL/*"Expecting numerical value, received something else"*/);
+					ReportError(ComRxExpectingNumber,FSH("Expecting numerical value, received something else"));
 					state = 0;
 					break;
 				}
@@ -232,36 +245,47 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 					case 'M': Settings->new_mode = value; break;	//Already validated
 					//case statements are included in the below macros
 ValidateAndApplyReceivedValue('R', value, Settings->target_Pramp_time,		SETTINGS_RAMPUP_MIN, SETTINGS_RAMPUP_MAX, ComRxRampOutsideLimits);
-ValidateAndApplyReceivedValue('I', value, Settings->target_inspiratory_time,SETTINGS_INHALE_TIME_MIN, SETTINGS_INHALE_TIME_MAX, ComRxInhaleTmOutsideLimits);
-ValidateAndApplyReceivedValue('E', value, Settings->target_expiratory_time,	SETTINGS_EXHALE_TIME_MIN, SETTINGS_EXHALE_TIME_MAX, ComRxExhaleTmOutsideLimits);
-ValidateAndApplyReceivedValue('V', value, Settings->target_volume,			SETTINGS_VOLUME_MIN, SETTINGS_VOLUME_MAX, ComRxVolumeOutsideLimits);
-ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
-ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,   SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
-ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,    SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
+ValidateAndApplyReceivedValue('I', value, Settings->target_inspiria_time, SETTINGS_INSPIRIA_TIME_MIN, SETTINGS_INSPIRIA_TIME_MAX, ComRxInspTmOutsideLimits);
+ValidateAndApplyReceivedValue('E', value, Settings->target_expiria_time,  SETTINGS_EXPIRIA_TIME_MIN, SETTINGS_EXPIRIA_TIME_MAX, ComRxExpTmOutsideLimits);
+ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					        SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
 
-ValidateAndApplyReceivedValue('G', value, Settings->trigger_pressure,   SETTINGS_TRIG_PRESSURE_MIN, SETTINGS_TRIG_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
-ValidateAndApplyReceivedValue('H', value, Settings->ETS,                SETTINGS_ETS_MIN, SETTINGS_ETS_MAX, ComRxTargetPressureOutsideLimits);
+ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,     SETTINGS_PEAK_PRESSURE_MIN, SETTINGS_PEAK_PRESSURE_MAX, ComRxPeakInspPressureOutsideLimits);
+ValidateAndApplyReceivedValue('t', value, Settings->MinInspPressure,      SETTINGS_MIN_PRESSURE_MIN, SETTINGS_MIN_PRESSURE_MAX, ComRxMinInspPressureOutsideLimits);
+ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,      SETTINGS_TARGET_PRESSURE_MIN, SETTINGS_TARGET_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
+ValidateAndApplyReceivedValue('V', value, Settings->target_tidal_volume,  SETTINGS_TIDAL_VOLUME_MIN, SETTINGS_TIDAL_VOLUME_MAX, ComRxVolumeOutsideLimits);
 
-ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
-ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
-ValidateAndApplyReceivedValue('3', value/100.0, Settings->PID_Pressure.D_Factor,  SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
-ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,  SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
+ValidateAndApplyReceivedValue('G', value, Settings->trigger_pressure,     SETTINGS_TRIG_PRESSURE_MIN, SETTINGS_TRIG_PRESSURE_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
+ValidateAndApplyReceivedValue('H', value, Settings->ETS,                  SETTINGS_ETS_MIN, SETTINGS_ETS_MAX, ComRxETS_OutsideLimits);
+ValidateAndApplyReceivedValue('A', value, Settings->limit_apnea_time_max,   SETTINGS_APNEA_TIME_LIMIT_MIN, SETTINGS_APNEA_TIME_LIMIT_MAX, ComRxETS_OutsideLimits);
+ValidateAndApplyReceivedValue('d', value, Settings->limit_tidal_volume_min,  SETTINGS_MIN_VT_LIMIT_MIN, SETTINGS_MIN_VT_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
+ValidateAndApplyReceivedValue('D', value, Settings->limit_tidal_volume_max,  SETTINGS_MAX_VT_LIMIT_MIN, SETTINGS_MAX_VT_LIMIT_MAX, ComRxETS_OutsideLimits);
+
+ValidateAndApplyReceivedValue('c', value, Settings->limit_minute_volume_min, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
+ValidateAndApplyReceivedValue('C', value, Settings->limit_minute_volume_max, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX, ComRxETS_OutsideLimits);
+ValidateAndApplyReceivedValue('b', value, Settings->limit_breath_rate_min,   SETTINGS_MIN_BREATH_RATE_LIMIT_MIN, SETTINGS_MIN_BREATH_RATE_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
+ValidateAndApplyReceivedValue('B', value, Settings->limit_breath_rate_max,   SETTINGS_MAX_BREATH_RATE_LIMIT_MIN, SETTINGS_MAX_BREATH_RATE_LIMIT_MAX, ComRxETS_OutsideLimits);
+
+
+ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
+ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
+ValidateAndApplyReceivedValue('3', value/100.0, Settings->PID_Pressure.D_Factor, SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
+ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,    SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
 ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
 ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
-ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,       SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
+ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,      SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
 				}
 				state = 0;
 				*newdata = 1;
 			}
 			else
 			{
-				ReportError(ComRxNoEtx,NULL/*"The last character was not ETX"*/);
+				ReportError(ComRxNoEtx,FSH("The last character was not ETX"));
 			}
 			state = 0;
 			break;
 		}
 		default:
-			ReportError(ComRxUnknownState,NULL/*"Receiver state machine: unknown state"*/);
+			ReportError(ComRxUnknownState,FSH("Receiver state machine: unknown state"));
 			state=0;
 			break;
 	}
@@ -270,6 +294,6 @@ ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,       S
 	{
 		//if STX character received in the middle of a packet, immediately jump to the appropriate state
 		state=1;
-		ReportError(ComRxUnexpectedStx,NULL/*"An STX character was received in the middle of a message - restarting state machine"*/);
+		ReportError(ComRxUnexpectedStx,FSH("An STX character was received in the middle of a message - restarting state machine"));
 	}
 }

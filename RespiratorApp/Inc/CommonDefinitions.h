@@ -48,24 +48,58 @@
 #define SETTINGS_DEFAULT_PRESSURE_PID_MAXOUT      100
 #define SETTINGS_DEFAULT_PRESSURE_PID_MINOUT      -100
 
+#define SETTINGS_DEFAULT_FLOW_PID_P           2 //64  // = P/SCALING_FACTOR = 0.5
+#define SETTINGS_DEFAULT_FLOW_PID_I           30 //1  // = I/SCALING_FACTOR
+#define SETTINGS_DEFAULT_FLOW_PID_D           0.05 // = D/SCALING_FACTOR
+#define SETTINGS_DEFAULT_FLOW_PID_MAXERR      500
+#define SETTINGS_DEFAULT_FLOW_PID_MAXSUMERR   500
+#define SETTINGS_DEFAULT_FLOW_PID_MAXOUT      100
+#define SETTINGS_DEFAULT_FLOW_PID_MINOUT      -100
+
 //settings limits
 //#define SETTINGS_RAMPUP_MIN			  0
 #define SETTINGS_RAMPUP_MIN			  50
 #define SETTINGS_RAMPUP_MAX			  200
-#define SETTINGS_INHALE_TIME_MIN	100
-#define SETTINGS_INHALE_TIME_MAX	2000
-#define SETTINGS_EXHALE_TIME_MIN	100
-#define SETTINGS_EXHALE_TIME_MAX	10000
-#define SETTINGS_VOLUME_MIN			  100
-#define SETTINGS_VOLUME_MAX			  1000
-#define SETTINGS_PEEP_MAX			    200
-#define SETTINGS_PEEP_MIN			    0
-#define SETTINGS_PRESSURE_MIN		    10
-#define SETTINGS_PRESSURE_MAX		    1000
-#define SETTINGS_TRIG_PRESSURE_MIN  5
-#define SETTINGS_TRIG_PRESSURE_MAX  20
-#define SETTINGS_ETS_MIN            25
-#define SETTINGS_ETS_MAX            75
+#define SETTINGS_INSPIRIA_TIME_MIN	100
+#define SETTINGS_INSPIRIA_TIME_MAX	2000
+#define SETTINGS_EXPIRIA_TIME_MIN	100
+#define SETTINGS_EXPIRIA_TIME_MAX	10000
+#define SETTINGS_PEEP_MIN                 0
+#define SETTINGS_PEEP_MAX                 200
+
+#define SETTINGS_PEAK_PRESSURE_MIN		  10
+#define SETTINGS_PEAK_PRESSURE_MAX		  1000
+#define SETTINGS_MIN_PRESSURE_MIN       10
+#define SETTINGS_MIN_PRESSURE_MAX       1000
+#define SETTINGS_TARGET_PRESSURE_MIN    10
+#define SETTINGS_TARGET_PRESSURE_MAX    1000
+#define SETTINGS_TIDAL_VOLUME_MIN       100
+//#define SETTINGS_TIDAL_VOLUME_MAX       1500
+#define SETTINGS_TIDAL_VOLUME_MAX       2000
+
+#define SETTINGS_TRIG_PRESSURE_MIN        5
+#define SETTINGS_TRIG_PRESSURE_MAX        20
+#define SETTINGS_ETS_MIN                  25
+#define SETTINGS_ETS_MAX                  75
+
+#define SETTINGS_APNEA_TIME_LIMIT_MIN     1000
+#define SETTINGS_APNEA_TIME_LIMIT_MAX     20000
+
+#define SETTINGS_MIN_VT_LIMIT_MIN         100
+#define SETTINGS_MIN_VT_LIMIT_MAX         1500
+#define SETTINGS_MAX_VT_LIMIT_MIN         100
+#define SETTINGS_MAX_VT_LIMIT_MAX         1500
+
+#define SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MIN 1000
+#define SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX 20000
+#define SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN 1000
+#define SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX 20000
+
+#define SETTINGS_MIN_BREATH_RATE_LIMIT_MIN   1
+#define SETTINGS_MIN_BREATH_RATE_LIMIT_MAX   30
+#define SETTINGS_MAX_BREATH_RATE_LIMIT_MIN   1
+#define SETTINGS_MAX_BREATH_RATE_LIMIT_MAX   30
+
 
 #define SETTINGS_PID_P_MIN			  0
 #define SETTINGS_PID_P_MAX  			UINT16_MAX
@@ -107,12 +141,19 @@ typedef struct RESPIRATOR_SETTINGS{
 	uint8_t current_mode;
 	uint8_t	new_mode;		//If new_mode is different than current mode, do transition
 	uint16_t target_Pramp_time;
-	uint16_t target_inspiratory_time;
-	uint16_t target_expiratory_time;
-	uint16_t target_volume;
-//	uint8_t breathing_rate;
+	uint16_t target_inspiria_time;
+	uint16_t target_expiria_time;
+  uint16_t limit_apnea_time_max;
+  uint16_t target_tidal_volume;
+  uint16_t limit_tidal_volume_min;
+  uint16_t limit_tidal_volume_max;
+  uint16_t limit_minute_volume_min;
+  uint16_t limit_minute_volume_max;
+  uint16_t limit_breath_rate_min;
+  uint16_t limit_breath_rate_max;
 	uint16_t PEEP;
-	uint16_t PeakInspPressure;
+  uint16_t PeakInspPressure;
+  uint16_t MinInspPressure;
 	uint16_t target_pressure;
   uint16_t trigger_pressure; // PCAP-PS inhale trigger
   uint16_t ETS;              // Expiria Stop trigger
@@ -187,9 +228,10 @@ typedef enum
   MODE_STATE_INSP_PREP_3,
   MODE_STATE_INSP_PRAMP = 0x30,   //48
   MODE_STATE_INSP_CONST_P,
-  MODE_STATE_INSP_MAX_VOL,
-  MODE_STATE_INSP_MAX_POS,
-  MODE_STATE_INSP_MAX_PRESSURE,
+  MODE_STATE_INSP_COMPLETE_ETS_TRIG = 0x40,  //64
+  MODE_STATE_INSP_COMPLETE_MAX_VOL,
+  MODE_STATE_INSP_COMPLETE_MAX_POS,
+  MODE_STATE_INSP_COMPLETE_MAX_PRESSURE,
 } ModeStates_t;
 
 
