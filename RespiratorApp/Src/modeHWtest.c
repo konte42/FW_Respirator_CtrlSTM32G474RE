@@ -28,8 +28,8 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 	switch (MODE_STATE)
 	{
 		case MODE_STATE_FIRST_RUN:	//First time: init local settings, etc
-			SETinsp_time = Settings->target_inspiratory_time;
-			SETexp_time = Settings->target_expiratory_time;
+			SETinsp_time = Settings->target_inspiria_time;
+			SETexp_time = Settings->target_expiria_time;
 			MODE_STATE=MODE_STATE_EXP_START;
 			break;
 			
@@ -69,8 +69,8 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 				MODE_STATE = MODE_STATE_FIRST_RUN;
 				break;
 			}
-			SETinsp_time = Settings->target_inspiratory_time;
-			SETexp_time = Settings->target_expiratory_time;
+			SETinsp_time = Settings->target_inspiria_time;
+			SETexp_time = Settings->target_expiria_time;
 			//PID values reload every time control mode changes
 			
 			//start cycle
@@ -97,11 +97,11 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
 			{
 				Control->mode=CTRL_PAR_MODE_STOP;
-				MODE_STATE = MODE_STATE_INSP_MAX_POS;
+				MODE_STATE = MODE_STATE_INSP_COMPLETE_MAX_POS;
 			}
 		break;
 
-		case MODE_STATE_INSP_MAX_POS: //motor je prisel do konca, pocakaj, da mine cas vdiha
+		case MODE_STATE_INSP_COMPLETE_MAX_POS: //motor je prisel do konca, pocakaj, da mine cas vdiha
 			timing += TIME_SLICE_MS;
 			if (timing > SETinsp_time)
 			{
