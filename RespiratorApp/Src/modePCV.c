@@ -50,13 +50,13 @@ static  float Pramp_rate = 0;
 	switch (dihanje_state)
 	{
 		case MODE_STATE_FIRST_RUN:	//First time: init local settings, etc
-      SETinsp_time = Settings->target_inspiratory_time;
-      SETexp_time = Settings->target_expiratory_time;
+      SETinsp_time = Settings->target_inspiria_time;
+      SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
       SETpressure = Settings->target_pressure/10.0;
       MAXpressure = Settings->PeakInspPressure/10.0;
-      MAXvolume = Settings->target_volume;
+      MAXvolume = Settings->target_tidal_volume;
       dihanje_state=MODE_STATE_EXP_START;
 		break;
 
@@ -102,9 +102,9 @@ static  float Pramp_rate = 0;
         break;
       }
       MAXpressure = Settings->PeakInspPressure/10.0;
-      MAXvolume = Settings->target_volume;
-      SETinsp_time = Settings->target_inspiratory_time;
-      SETexp_time = Settings->target_expiratory_time;
+      MAXvolume = Settings->target_tidal_volume;
+      SETinsp_time = Settings->target_inspiria_time;
+      SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
       SETpressure = Settings->target_pressure/10.0;
@@ -220,20 +220,20 @@ static  float Pramp_rate = 0;
 		//Alternate condition - max volume reached. Should probably issue a warning
 		if (Measured->volume_t > MAXvolume)
 		{
-			dihanje_state = MODE_STATE_INSP_MAX_VOL;
+			dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_VOL;
 		}
 		if (Measured->pressure > MAXpressure)
 		{
-			dihanje_state = MODE_STATE_INSP_MAX_PRESSURE;
+			dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_PRESSURE;
 		}
 		//Errors:
 		if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
 		{
-			dihanje_state = MODE_STATE_INSP_MAX_POS;
+			dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_POS;
 		}
 		break;
 
-		case MODE_STATE_INSP_MAX_VOL: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
+		case MODE_STATE_INSP_COMPLETE_MAX_VOL: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
 		timing += TIME_SLICE_MS;
 		Control->mode = CTRL_PAR_MODE_STOP;
 		if (timing > SETinsp_time)
@@ -242,7 +242,7 @@ static  float Pramp_rate = 0;
 		}
 		break;
 
-		case MODE_STATE_INSP_MAX_PRESSURE: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
+		case MODE_STATE_INSP_COMPLETE_MAX_PRESSURE: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
 		timing += TIME_SLICE_MS;
 		Control->mode = CTRL_PAR_MODE_STOP;
 		if (timing > SETinsp_time)
@@ -251,7 +251,7 @@ static  float Pramp_rate = 0;
 		}
 		break;
 
-		case MODE_STATE_INSP_MAX_POS: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
+		case MODE_STATE_INSP_COMPLETE_MAX_POS: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
 		timing += TIME_SLICE_MS;
 		Control->mode = CTRL_PAR_MODE_STOP;
 		if (timing > SETinsp_time)
