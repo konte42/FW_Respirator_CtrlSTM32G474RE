@@ -90,7 +90,7 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settings)
 {
 //  int length = sizeof(RespSettings_t)+3;
-  int length = 16+3;
+  int length = 36+3;
   if (MAX_LENGTH >= length)
 	{
 		*p_msg = 0x56;
@@ -264,7 +264,6 @@ ValidateAndApplyReceivedValue('c', value, Settings->limit_minute_volume_min, SET
 ValidateAndApplyReceivedValue('C', value, Settings->limit_minute_volume_max, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX, ComRxETS_OutsideLimits);
 ValidateAndApplyReceivedValue('b', value, Settings->limit_breath_rate_min,   SETTINGS_MIN_BREATH_RATE_LIMIT_MIN, SETTINGS_MIN_BREATH_RATE_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
 ValidateAndApplyReceivedValue('B', value, Settings->limit_breath_rate_max,   SETTINGS_MAX_BREATH_RATE_LIMIT_MIN, SETTINGS_MAX_BREATH_RATE_LIMIT_MAX, ComRxETS_OutsideLimits);
-
 
 ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
 ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
