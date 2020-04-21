@@ -170,7 +170,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
       //DO NOT PUT BREAK HERE!
 
 		case CTRL_PAR_MODE_REGULATE_FLOW:
-			//can only regulate inspiration
+			//can only regulate inspiratory part of the cycle
 			motorSpeed = PID_fCalculate(1,Control->target_flow, Measured->flow, PIDdata);
 			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
 			{
