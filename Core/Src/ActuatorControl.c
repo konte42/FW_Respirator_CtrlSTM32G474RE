@@ -6,11 +6,9 @@
  */ 
 #include "ActuatorControl.h"
 
-//int32_t FIR(int16_t new_x);
-
   float motorSpeed;
   float motorCurrent;
-//TODO: every time control mode is changed, PID must be reset and loaded with appropriate parameters
+//TODO: every time control mode is changed, PID could be reset and loaded with appropriate parameters
 void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, fpidData_t *PIDdata)
 {
 //  static uint8_t last_mode = CTRL_PAR_MODE_STOP;
@@ -136,28 +134,6 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 			motor_SetSpeed(motorSpeed);
 		break;
 
-// VOLUME REGULATION MODES ///////////////////////////////////////////////////////////
-		case CTRL_PAR_MODE_REGULATE_VOLUME_PID_RESET:
-      PID_fInit(Settings->PID_Volume.P_Factor,
-                Settings->PID_Volume.I_Factor,
-                Settings->PID_Volume.D_Factor,
-                Settings->PID_Volume.maxError,
-                Settings->PID_Volume.maxSumError,
-                PIDdata);
-			Control->mode=CTRL_PAR_MODE_REGULATE_VOLUME;
-      //DO NOT PUT BREAK HERE!
-
-		case CTRL_PAR_MODE_REGULATE_VOLUME:
-			//can only regulate inspiration		//volume span 1000, measured span 10000
-			motorSpeed = PID_fCalculate(1,Control->target_volume, Measured->volume_t/10, PIDdata);
-			if (Control->cur_position >= CTRL_PAR_MAX_POSITION)
-			{
-        motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
-			}
-			if (motorSpeed<0) motorSpeed = 0.01;
-			motor_SetSpeed(motorSpeed);
-		break;
-
 // FLOW REGULATION MODES ///////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET:
       PID_fInit(Settings->PID_Flow.P_Factor,
@@ -183,7 +159,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 ///////////////////////////////////////////////////////////////////////////////////
 // ERROR - UNKNOWN MODE ///////////////////////////////////////////////////////////
 		default: //Error: Stop immediately
-		ReportError(ActuatorCtrlUnknownMode,NULL/*"Unknown actuator control mode"*/);
+		ReportError(ActuatorCtrlUnknownMode,FSH("Unknown actuator control mode"));
 		Control->mode=CTRL_PAR_MODE_TARGET_POSITION;
 		motor_SetSpeed(0);
 		break;
@@ -192,26 +168,3 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 //	last_mode = cur_mode;
 	Control->last_position = Control->cur_position;
 }
-
-/*
-int32_t FIR(int16_t new_x)
-{
-	const int32_t b[]={2, 6, 15, 30, 54, 87, 131, 186, 253, 332, 422, 521, 629, 743, 860, 978, 1093, 1202, 1303, 1393, 1468, 1526, 1566, 1586};
-	#define FILTER_LENGTH (sizeof(b)/sizeof(b[0])*2)
-	static int32_t x[FILTER_LENGTH];
-	static int index=0;
-	int i;
-	int32_t y;
-	
-	x[index]=new_x;
-	y=0;
-	for (i=0; i<FILTER_LENGTH/2; i++)
-	{
-		y+=b[i]*x[(index+FILTER_LENGTH-i)%FILTER_LENGTH] + b[i]*x[(index+1+i)%FILTER_LENGTH];
-	}
-	index++;
-	if (index >= FILTER_LENGTH) index = 0;
-	
-	return (y>>15);
-}
-*/

@@ -27,7 +27,7 @@
 #define MODE_STOP	    0
 #define MODE_CMV	    1
 #define MODE_PCV	    2
-#define MODE_CPAP_PS	3
+#define MODE_PS	3
 #define MODE_HW_TEST	4
 
 //default settings
@@ -157,11 +157,8 @@ typedef struct RESPIRATOR_SETTINGS{
 	uint16_t target_pressure;
   uint16_t trigger_pressure; // PCAP-PS inhale trigger
   uint16_t ETS;              // Expiria Stop trigger
-	fpidSettings_t PID_Position;
 	fpidSettings_t PID_Pressure;
-  fpidSettings_t PID_Volume;
   fpidSettings_t PID_Flow;
-  fpidSettings_t PID_Speed;
 } RespSettings_t;
 
 //Measured Parameters
