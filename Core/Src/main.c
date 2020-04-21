@@ -21,6 +21,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include <modeCMV.h>
 #include <modePCV.h>
+#include "modeCPAP_PS.h"
 #include "main.h"
 #include "adc.h"
 #include "usart.h"
@@ -223,7 +224,7 @@ int main(void)
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
         case MODE_CPAP_PS:
-          modeSTOP(&Settings, &Measured, &Control);
+          modeCPAP_PS(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
         case MODE_HW_TEST:

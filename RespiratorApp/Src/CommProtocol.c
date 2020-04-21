@@ -122,7 +122,8 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 //  'I' = inspiratory time (???) ms
 //	'E' = expiratory time (???) ms
 //	'V' = volume (100-1000) ml
-//
+//  'G' = Inhale Trigger pressure
+//  'H' = ETS
 //Example:
 //>M V\n
 
@@ -154,6 +155,8 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 				case 'P':
 				case 'T':
 				case 'S':
+				case 'G':
+				case 'H':
 				case '1':
 				case '2':
 				case '3':
@@ -210,7 +213,7 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 				break;
 			}
 			else	//Parameters with ASCII numerical value:
-			{		// R, I, E, V, A, P, T, 1, 2, 3, 4
+			{		// R, I, E, V, A, P, T, G, H, 1, 2, 3, 4
 				if (data >= '0' && data <= '9'){ value=value*10+data-'0'; break;}
 				else if (data == '\n') {state++;}	// !DO NOT BREAK HERE AS THE LAST CHAR IS ETX!
 				else {
@@ -233,9 +236,12 @@ ValidateAndApplyReceivedValue('I', value, Settings->target_inspiratory_time,SETT
 ValidateAndApplyReceivedValue('E', value, Settings->target_expiratory_time,	SETTINGS_EXHALE_TIME_MIN, SETTINGS_EXHALE_TIME_MAX, ComRxExhaleTmOutsideLimits);
 ValidateAndApplyReceivedValue('V', value, Settings->target_volume,			SETTINGS_VOLUME_MIN, SETTINGS_VOLUME_MAX, ComRxVolumeOutsideLimits);
 ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
-ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
-ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,		SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
-					
+ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,   SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
+ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,    SETTINGS_PRESSURE_MIN, SETTINGS_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
+
+ValidateAndApplyReceivedValue('G', value, Settings->trigger_pressure,   SETTINGS_TRIG_PRESSURE_MIN, SETTINGS_TRIG_PRESSURE_MAX, ComRxMaxPressureOutsideLimits);
+ValidateAndApplyReceivedValue('H', value, Settings->ETS,                SETTINGS_ETS_MIN, SETTINGS_ETS_MAX, ComRxTargetPressureOutsideLimits);
+
 ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor,	SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
 ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor,	SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
 ValidateAndApplyReceivedValue('3', value/100.0, Settings->PID_Pressure.D_Factor,  SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);

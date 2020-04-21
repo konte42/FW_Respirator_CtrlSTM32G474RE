@@ -23,7 +23,7 @@
 #endif
 #define STATUS_REPORTING_PERIOD	10	// ms
 
-#define MODE_DEFAULT	2	//Kateri je default?
+#define MODE_DEFAULT	3	//Kateri je default?
 #define MODE_STOP	    0
 #define MODE_CMV	    1
 #define MODE_PCV	    2
@@ -60,8 +60,13 @@
 #define SETTINGS_VOLUME_MAX			  1000
 #define SETTINGS_PEEP_MAX			    200
 #define SETTINGS_PEEP_MIN			    0
-#define SETTINGS_PRESSURE_MIN		  10
-#define SETTINGS_PRESSURE_MAX		  1000
+#define SETTINGS_PRESSURE_MIN		    10
+#define SETTINGS_PRESSURE_MAX		    1000
+#define SETTINGS_TRIG_PRESSURE_MIN  5
+#define SETTINGS_TRIG_PRESSURE_MAX  20
+#define SETTINGS_ETS_MIN            25
+#define SETTINGS_ETS_MAX            75
+
 #define SETTINGS_PID_P_MIN			  0
 #define SETTINGS_PID_P_MAX  			UINT16_MAX
 #define SETTINGS_PID_I_MIN	  		0
@@ -109,6 +114,8 @@ typedef struct RESPIRATOR_SETTINGS{
 	uint16_t PEEP;
 	uint16_t PeakInspPressure;
 	uint16_t target_pressure;
+  uint16_t trigger_pressure; // PCAP-PS inhale trigger
+  uint16_t ETS;              // Expiria Stop trigger
 	fpidSettings_t PID_Position;
 	fpidSettings_t PID_Pressure;
   fpidSettings_t PID_Volume;
@@ -166,6 +173,24 @@ typedef struct CONTROL_PARAMS{
 	uint8_t status;	//stanje state machina za dihanje
 	uint8_t Error;	//napake (bitwise)
 } CtrlParams_t;
+
+typedef enum
+{
+  MODE_STATE_FIRST_RUN = 0x00,
+  MODE_STATE_EXP_START = 0x10,    //16
+  MODE_STATE_EXP_ZERO_POS_WAIT,
+  MODE_STATE_EXP_WAIT,
+  MODE_STATE_LOOK_FOR_INSP_TRIGGER,
+  MODE_STATE_INSP_INIT = 0x20,    //32
+  MODE_STATE_INSP_PREP_1,
+  MODE_STATE_INSP_PREP_2,
+  MODE_STATE_INSP_PREP_3,
+  MODE_STATE_INSP_PRAMP = 0x30,   //48
+  MODE_STATE_INSP_CONST_P,
+  MODE_STATE_INSP_MAX_VOL,
+  MODE_STATE_INSP_MAX_POS,
+  MODE_STATE_INSP_MAX_PRESSURE,
+} ModeStates_t;
 
 
 
