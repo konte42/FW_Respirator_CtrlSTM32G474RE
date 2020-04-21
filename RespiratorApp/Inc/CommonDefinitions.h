@@ -23,7 +23,7 @@
 #endif
 #define STATUS_REPORTING_PERIOD	10	// ms
 
-#define MODE_DEFAULT	3	//Kateri je default?
+#define MODE_DEFAULT	0	//Kateri je default?
 #define MODE_STOP	    0
 #define MODE_CMV	    1
 #define MODE_PCV	    2
@@ -100,6 +100,7 @@
 #define SETTINGS_MAX_BREATH_RATE_LIMIT_MIN   1
 #define SETTINGS_MAX_BREATH_RATE_LIMIT_MAX   30
 
+#define MAX_PS_INSP_TIME  5000
 
 #define SETTINGS_PID_P_MIN			  0
 #define SETTINGS_PID_P_MAX  			UINT16_MAX
