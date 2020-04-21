@@ -76,9 +76,9 @@ typedef enum ErrCodes
   //0xC0 - 0xFF: System errors - critical
 	ActuatorCtrlUnknownMode = 0xC0,
 	ModeUnknownMode,
-	ModeC_VCV_UnknownState,
-	ModeC_PCV_UnknownState,
-	ModeCPAP_PS_UnknownState
+	ModeCMV_UnknownState,
+	ModePCV_UnknownState,
+	ModePS_UnknownState
 } ErrCodes_t;
 
 #define ERROR_QUEUE_LENGTH	50
