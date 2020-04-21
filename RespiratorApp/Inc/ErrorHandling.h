@@ -17,44 +17,68 @@
 //Copy "void ReportError(ErrCodes_t ErrCode, char ErrMsg[])"
 //function and make your own hardware/application specific version
 
+//FlashStringHelper
+#define FSH(x)  x
+//#define FSH(x)  PSTR(x) //For AVR - strings stored in flash
+//#define FSH(x)  NULL  //Remove all strings
 
 //Error codes
 typedef enum ErrCodes
 {
 	NoError = 0x00,
-	ErrQueueEmpty = 0x01,
-	ComRxBuffOverrun = 0x10,
-	ComRxUnknownState = 0x11,
-	ComRxUnknownParameter = 0x12,
-	ComRxNoSpaceAfterParam = 0x13,
-	ComRxExpectingNumber = 0x14,
-	ComRxNoEtx = 0x15,
-	ComRxUnexpectedStx = 0x16,
-	ComRxUnknownMode = 0x20,
-	ComRxRampOutsideLimits = 0x21,
-	ComRxInhaleTmOutsideLimits = 0x22,
-	ComRxExhaleTmOutsideLimits = 0x23,
-	ComRxVolumeOutsideLimits = 0x24,
-	ComRxBreathingRateOtsideLimits = 0x25,
-	ComRxPEEPOutsideLimits = 0x26,
-	ComRxMaxPressureOutsideLimits = 0x27,
-	ComRxTargetPressureOutsideLimits = 0x28,
-	ComRxPIDPOutsideLimits = 0x29,
-	ComRxPIDIOutsideLimits = 0x2A,
-  ComRxPIDDOutsideLimits = 0x2B,
-  ComRxPIDmaxErrOutsideLimits = 0x2C,
-  ComRxPIDmaxSumErrOutsideLimits = 0x2D,
-  ComRxPIDmaxOutOutsideLimits = 0x2E,
-  ComRxPIDminOutOutsideLimits = 0x2F,
-	ActuatorCtrlUnknownMode = 0x30,
-	ModeUnknownMode = 0x40,
-	ModeC_VCV_UnknownState = 0x41,
-	ModeC_PCV_UnknownState = 0x42,
-	ModeAC_VCV_UnknownState = 0x43,
-	ModeAC_PCV_UnknownState = 0x44,
-	ModeCPAP_UnknownState = 0x45,
-	Limits_InsufficientVolume = 0x50,
-	Limits_VolumeTooHigh=0x51
+	//0x01 - 0x1F: Informational messages
+  ErrQueueEmpty = 0x01,    //This is ok - no errors
+  DbgMsg,
+
+	//0x20 - 0x4F: Warnings (Medical)
+  Limits_InsufficientVolume = 0x20,
+  Limits_VolumeTooHigh,
+
+	//0x50 - 0x7F: Errors (Medical)
+
+  //0x80 - 0x9F: Communication errors
+  ComRxUnknownParameter = 0x80,
+  ComRxNoSpaceAfterParam,
+  ComRxExpectingNumber,
+  ComRxNoEtx,
+  ComRxUnexpectedStx,
+  //Parameter limits
+  ComRxUnknownMode,
+
+  ComRxRampOutsideLimits,
+  ComRxInspTmOutsideLimits,
+  ComRxExpTmOutsideLimits,
+  ComRxPEEPOutsideLimits,
+  
+  ComRxPeakInspPressureOutsideLimits,
+  ComRxMinInspPressureOutsideLimits,
+  ComRxTargetPressureOutsideLimits,
+  ComRxVolumeOutsideLimits,
+
+  ComRxInspiriaTriggerPressureOutsideLimits,
+  ComRxETS_OutsideLimits,
+
+  ComRxBreathRateLimitMinOtsideLimits,
+  ComRxBreathRateLimitMaxOtsideLimits,
+
+  ComRxPIDPOutsideLimits,
+  ComRxPIDIOutsideLimits,
+  ComRxPIDDOutsideLimits,
+  ComRxPIDmaxErrOutsideLimits,
+  ComRxPIDmaxSumErrOutsideLimits,
+  ComRxPIDmaxOutOutsideLimits,
+  ComRxPIDminOutOutsideLimits,
+
+  //0xA0 - 0xBF: System errors
+  ComRxBuffOverrun = 0xA0,
+  ComRxUnknownState,
+
+  //0xC0 - 0xFF: System errors - critical
+	ActuatorCtrlUnknownMode = 0xC0,
+	ModeUnknownMode,
+	ModeC_VCV_UnknownState,
+	ModeC_PCV_UnknownState,
+	ModeCPAP_PS_UnknownState
 } ErrCodes_t;
 
 #define ERROR_QUEUE_LENGTH	50

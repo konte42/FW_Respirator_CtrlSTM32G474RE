@@ -4,8 +4,12 @@
  * Created: 3. 04. 2020 18:31:24
  *  Author: maticpi
  */ 
-
+#include <string.h>
 #include "ErrorHandling.h"
+
+//Figure out where it would make sense to put ErrorReporter and put one there
+#include "main.h"
+extern UART_HandleTypeDef hlpuart1;
 
 void ErrQueue_Init(struct ERR_QUEUE *ErrQueue)
 {
@@ -49,5 +53,6 @@ void ReportError(ErrCodes_t ErrCode, char ErrMsg[])
 {
 	ErrQueue_StoreErr(ErrCode,&DefaultErrorQueue);
 	//printf("Error %d: %s,ErrCode,ErrMsg);
+	HAL_UART_Transmit_IT(&hlpuart1, (uint8_t*)ErrMsg, strlen(ErrMsg));
 }
 #endif
