@@ -23,30 +23,28 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
   static  int16_t timing;
   static  uint16_t SETinsp_time;
   static  uint16_t SETexp_time;
-  static  float SETpressure;
-  static  float SETPrampPressure;
-  static  float SETPrampStartPressure;
-  static  float SET_PEEP;
-  static  float MAXpressure;
-  static  float PressureSafetyMargin = 5;
-  static  float MAXvolume;
   static  uint16_t SETpramp_time;
   static  int16_t PreStartBoostTime;
   static  float PREP_CURRENT_START = 25;
   static  float PREP_CURRENT_MAX = 30;
-
   static  float PREP_T_TOTAL = 50;
   static  float PREP_T_START = 10;
   static  float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
-  static  float PRESSURE_INCREMENT = 0.001; // cmH2O
-  static  float TargetFlow = 0;
-static  float Pramp_rate = 0;
 
+  static  float SET_PEEP;
+  static  float MAXpressure;
+  static  float PressureSafetyMargin = 5;
+
+  static  float TargetVolume = 0;
+  static  float TargetFlow = 0;
+  static  float StartFlow = 0;
+  static  float Pramp_rate = 0;
+  static  float InertiaVolume = 0;
 
   Control->status = dihanje_state;  // shrani stanje dihanja
 
   //State machine starts with exhalation.
-  //At the end of exhalation all the settings are reloaded into local copies (state 3?).
+  //At the end of exhalation all the settings are reloaded into local copies.
   //Local settings are used during the rest of the cycle,
   //so that incompatible settings can not be loaded at the wrong time
 
@@ -57,9 +55,8 @@ static  float Pramp_rate = 0;
       SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
-      SETpressure = Settings->target_pressure/10.0;
       MAXpressure = Settings->PeakInspPressure/10.0;
-      MAXvolume = Settings->target_tidal_volume;
+      TargetVolume = Settings->target_tidal_volume;
       dihanje_state=MODE_STATE_EXP_START;
     break;
 
@@ -67,7 +64,7 @@ static  float Pramp_rate = 0;
       Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
       Control->target_position  = 0;
       Control->target_pressure = SET_PEEP;
-      FIR(SET_PEEP,1,SET_PEEP);
+      FIR(0,1,0);
       timing=0;
       dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
       LED1_Off();
@@ -104,20 +101,18 @@ static  float Pramp_rate = 0;
         dihanje_state = MODE_STATE_FIRST_RUN;
         break;
       }
-      MAXpressure = Settings->PeakInspPressure/10.0;
-      MAXvolume = Settings->target_tidal_volume;
+
       SETinsp_time = Settings->target_inspiria_time;
       SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
-      SETpressure = Settings->target_pressure/10.0;
-      SETPrampPressure = SETpressure - SETinsp_time*PRESSURE_INCREMENT;
-      //SETPrampStartPressure = SET_PEEP+(SETPrampPressure-SET_PEEP)/4;
-      Pramp_rate = (SETPrampPressure - SET_PEEP - (SETPrampPressure-SET_PEEP)/4)/ MAX_PRAMP_TIME;
-      SETPrampStartPressure = SETPrampPressure - SETpramp_time*Pramp_rate;
+      MAXpressure = Settings->PeakInspPressure/10.0;
+      TargetVolume = Settings->target_tidal_volume;     //
 
-      TargetFlow = MAXvolume / SETinsp_time;
-
+      TargetFlow = TargetVolume / SETinsp_time * 60.0;         //  ml/ms * 60 = l/min
+      Pramp_rate = (TargetFlow * 0.75 )/ MAX_PRAMP_TIME;
+      StartFlow = TargetFlow - SETpramp_time*Pramp_rate;;
+      //InertiaVolume = 0;
 
       //start cycle
       Measured->volume_mode = VOLUME_INTEGRATE;
@@ -160,7 +155,7 @@ static  float Pramp_rate = 0;
       if (timing >= PREP_T_TOTAL)
       {
         Control->mode=CTRL_PAR_MODE_REGULATE_FLOW;
-        Control->target_flow = FIR(SETPrampStartPressure,0,0);
+        Control->target_flow = FIR(StartFlow,0,0);
         dihanje_state=MODE_STATE_INSP_PRAMP;
         SETexp_time = SETexp_time - PreStartBoostTime;
         timing=0;
@@ -171,7 +166,7 @@ static  float Pramp_rate = 0;
       if (Measured->pressure > (MAXpressure - PressureSafetyMargin))
       {
         Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
-        Control->target_pressure = FIR(SETPrampPressure,0,0);
+        Control->target_pressure = FIR(MAXpressure-PressureSafetyMargin,0,0);
         SETexp_time = SETexp_time - (PreStartBoostTime + timing);
         timing = 0;
         dihanje_state = MODE_STATE_INSP_CONST_P;  //direktno na const. pressure step
@@ -184,29 +179,29 @@ static  float Pramp_rate = 0;
 
     case MODE_STATE_INSP_PRAMP: //P-ramp
     timing += TIME_SLICE_MS;
-    Control->target_flow = FIR(SETPrampStartPressure + Pramp_rate*timing,0,0);
+    Control->target_flow = FIR(StartFlow + Pramp_rate*timing,0,0);
     if (timing >= SETpramp_time)  // gremo v constant pressure
     {
-      Control->target_pressure = FIR(SETPrampPressure,0,0);
+      Control->target_flow = FIR(TargetFlow,0,0);
       dihanje_state=MODE_STATE_INSP_CONST_P;
     }
     break;
 
-//Constant pressure ////////////////////////////////////////
+//Constant Flow ////////////////////////////////////////
     case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
       timing += TIME_SLICE_MS;
-      Control->target_pressure=FIR(SETPrampPressure+ (timing-SETpramp_time)*PRESSURE_INCREMENT,0,0);
+      Control->target_flow=FIR(TargetFlow,0,0);
       // ce je prisel do konca, zakljuci cikel vdiha
+      if (Measured->volume_t > (TargetVolume-InertiaVolume) )
+      {
+        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_VOL;
+      }
+      //Alternate condition - max volume reached. Should probably issue a warning
       if (timing > SETinsp_time)
       {
         dihanje_state=MODE_STATE_EXP_START;
         LED5_Off();
         LED6_On();
-      }
-      //Alternate condition - max volume reached. Should probably issue a warning
-      if (Measured->volume_t > MAXvolume)
-      {
-        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_VOL;
       }
       if (Measured->pressure > MAXpressure)
       {
@@ -247,10 +242,10 @@ static  float Pramp_rate = 0;
       break;
 
     default:
-    //ReportError(ModeC_VCV_UnknownState,NULL/*"Error: Unknown state in C_VCV state machine"*/);
-    Control->mode=CTRL_PAR_MODE_STOP;
-    dihanje_state = 0;
-    break;
+      ReportError(ModeCMV_UnknownState,FSH("Error: Unknown state in C_VCV state machine"));
+      Control->mode=CTRL_PAR_MODE_STOP;
+      dihanje_state = 0;
+      break;
   }
 }
 
