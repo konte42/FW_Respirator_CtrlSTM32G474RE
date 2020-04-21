@@ -10,58 +10,36 @@
 #include "Measure.h"
 #include "GPIO.h"
 
-#define MODE_STATE_FIRST_RUN				  -1
-#define MODE_STATE_EXP_START				  0
-#define MODE_STATE_EXP_ZERO_POS_WAIT	1
-#define MODE_STATE_EXP_WAIT					  2
-#define MODE_STATE_INSP_INIT				  3
-#define MODE_STATE_INSP_PREP_1        4
-#define MODE_STATE_INSP_PREP_2        5
-#define MODE_STATE_INSP_PREP_3        6
-#define MODE_STATE_INSP_PRAMP				  7
-#define MODE_STATE_INSP_CONST_P				8
-#define MODE_STATE_INSP_MAX_VOL				9
-#define MODE_STATE_INSP_MAX_POS				10
-#define MODE_STATE_INSP_MAX_PRESSURE	11
+float fFIR50(float new_x, int reset, float reset_val);
 
-float FIR(float new_x, int reset, float reset_val);
-
-int8_t dihanje_state = -1;
-int16_t timing;
-uint16_t SETinsp_time;
-uint16_t SETexp_time;
-float SETpressure;
-float SETPrampPressure;
-float SETPrampStartPressure;
-float SET_PEEP;
-float MAXpressure;
-float MAXvolume;
-uint16_t SETpramp_time;
-int16_t PreStartBoostTime;
-float PREP_CURRENT_START = 25;
-float PREP_CURRENT_MAX = 30;
-
-float PREP_T_TOTAL = 50;
-float PREP_T_START = 10;
-float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
-float PRESSURE_INCREMENT = 0.001; // cmH2O
-float Pramp_rate = 0;
 
 #define MAX_PRAMP_TIME  200
 
 void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-/*	static int8_t dihanje_state = -1;
-	static int16_t timing;
-	static uint16_t SETinsp_time;
-	static uint16_t SETexp_time;
-	static float SETpressure;
-	static float SET_PEEP;
-	static float MAXpressure;
-	static float MAXvolume;
-	static uint16_t SETpramp_time;
-	static int16_t PreStartBoostTime;
-*/
+
+  static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
+  static  int16_t timing;
+  static  uint16_t SETinsp_time;
+  static  uint16_t SETexp_time;
+  static  float SETpressure;
+  static  float SETPrampPressure;
+  static  float SETPrampStartPressure;
+  static  float SET_PEEP;
+  static  float MAXpressure;
+  static  float MAXvolume;
+  static  uint16_t SETpramp_time;
+  static  int16_t PreStartBoostTime;
+  static  float PREP_CURRENT_START = 25;
+  static  float PREP_CURRENT_MAX = 30;
+
+  static  float PREP_T_TOTAL = 50;
+  static  float PREP_T_START = 10;
+  static  float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
+  static  float PRESSURE_INCREMENT = 0.001; // cmH2O
+static  float Pramp_rate = 0;
+
+
 	Control->status = dihanje_state;	// shrani stanje dihanja
 	
 	//State machine starts with exhalation.
@@ -86,7 +64,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
       Control->target_position  = 0;
       Control->target_pressure = SET_PEEP;
-      FIR(SET_PEEP,1,SET_PEEP);
+      fFIR50(SET_PEEP,1,SET_PEEP);
       timing=0;
       dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
       LED1_Off();
@@ -178,7 +156,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       if (timing >= PREP_T_TOTAL)
       {
         Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
-        Control->target_pressure = FIR(SETPrampStartPressure,0,0);
+        Control->target_pressure = fFIR50(SETPrampStartPressure,0,0);
         dihanje_state=MODE_STATE_INSP_PRAMP;
         SETexp_time = SETexp_time - PreStartBoostTime;
         timing=0;
@@ -188,7 +166,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       if (Measured->pressure > SETpressure)
       {
         Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
-        Control->target_pressure = FIR(SETPrampPressure,0,0);
+        Control->target_pressure = fFIR50(SETPrampPressure,0,0);
         //LED2_On();
         SETexp_time = SETexp_time - (PreStartBoostTime + timing);
         timing = 0;
@@ -203,10 +181,10 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 		case MODE_STATE_INSP_PRAMP: //P-ramp
     timing += TIME_SLICE_MS;
 //    Control->target_pressure = SETPrampStartPressure + (SETPrampPressure-SETPrampStartPressure)/SETpramp_time*timing;
-    Control->target_pressure = FIR(SETPrampStartPressure + Pramp_rate*timing,0,0);
+    Control->target_pressure = fFIR50(SETPrampStartPressure + Pramp_rate*timing,0,0);
     if (timing >= SETpramp_time)  // gremo v constant pressure
     {
-      Control->target_pressure = FIR(SETPrampPressure,0,0);
+      Control->target_pressure = fFIR50(SETPrampPressure,0,0);
       dihanje_state=MODE_STATE_INSP_CONST_P;
       LED4_Off();
       LED5_On();
@@ -217,10 +195,10 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 		case MODE_STATE_INSP_PRAMP: //P-ramp
 		timing += TIME_SLICE_MS;
 //    Control->target_pressure = SETPrampStartPressure + (SETPrampPressure-SETPrampStartPressure)/SETpramp_time*timing;
-    Control->target_pressure = FIR(SETPrampStartPressure + (SETPrampPressure-SETPrampStartPressure)/SETpramp_time*timing,0,0);
+    Control->target_pressure = fFIR50(SETPrampStartPressure + (SETPrampPressure-SETPrampStartPressure)/SETpramp_time*timing,0,0);
 		if (timing >= SETpramp_time)	// gremo v constant pressure
 		{
-			Control->target_pressure = FIR(SETPrampPressure,0,0);
+			Control->target_pressure = fFIR50(SETPrampPressure,0,0);
 			dihanje_state=MODE_STATE_INSP_CONST_P;
       LED4_Off();
       LED5_On();
@@ -231,7 +209,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 //Constant pressure ////////////////////////////////////////
 		case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
 		timing += TIME_SLICE_MS;
-		Control->target_pressure=FIR(SETPrampPressure+ (timing-SETpramp_time)*PRESSURE_INCREMENT,0,0);
+		Control->target_pressure=fFIR50(SETPrampPressure+ (timing-SETpramp_time)*PRESSURE_INCREMENT,0,0);
 		// ce je prisel do konca, zakljuci cikel vdiha
 		if (timing > SETinsp_time)
 		{
@@ -290,7 +268,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 	}
 }
 
-float FIR(float new_x, int reset, float reset_val)
+float fFIR50(float new_x, int reset, float reset_val)
 {
   const float b[]={3.747227e-06, 4.645703e-05, 1.789057e-04, 4.545593e-04, 9.267559e-04,
       1.645741e-03, 2.655701e-03, 3.991955e-03, 5.678439e-03, 7.725642e-03, 1.012909e-02,

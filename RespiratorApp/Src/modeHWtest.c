@@ -8,20 +8,9 @@
 #include "GPIO.h"
 #include "Measure.h"
 
-enum MODE_STATE
-{
-	MODE_STATE_FIRST_RUN,
-	MODE_STATE_EXP_START,
-	MODE_STATE_EXP_ZERO_POS_WAIT,
-	MODE_STATE_EXP_WAIT,
-	MODE_STATE_INSP_INIT,
-	MODE_STATE_INSP,
-	MODE_STATE_INSP_MAX_POS
-};
-
 void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-	static int8_t MODE_STATE = MODE_STATE_FIRST_RUN;
+	static ModeStates_t MODE_STATE = MODE_STATE_FIRST_RUN;
 	static int16_t timing;
 	
 	#define PRAMP_OFFSET	5	//cmH2O
@@ -89,12 +78,12 @@ void modeHWtest(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams
 			Control->BreathCounter++;
 			Control->target_speed = 100;
 			Control->mode=CTRL_PAR_MODE_TARGET_SPEED;
-			MODE_STATE=MODE_STATE_INSP;
+			MODE_STATE=MODE_STATE_INSP_CONST_P;
 			timing = 0;
 			
 		break;
 				
-		case MODE_STATE_INSP: //cakaj da mine INHALE_TIME ali da motor pride do konca
+		case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
 			
 			timing += TIME_SLICE_MS;
 			// ce je prisel do konca, zakljuci cikel vdiha
