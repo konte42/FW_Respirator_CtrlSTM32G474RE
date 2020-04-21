@@ -33,10 +33,10 @@
 #include "Measure.h"
 #include "ActuatorControl.h"
 #include "CommProtocol.h"
+#include "modeSTOP.h"
 #include "modeCMV.h"
 #include "modePCV.h"
-#include "modeCPAP_PS.h"
-#include "modeSTOP.h"
+#include "modePS.h"
 #include "modeHWtest.h"
 /* USER CODE END Includes */
 
@@ -233,8 +233,8 @@ int main(void)
           modePCV(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
-        case MODE_CPAP_PS:
-          modeCPAP_PS(&Settings, &Measured, &Control);
+        case MODE_PS:
+          modePS(&Settings, &Measured, &Control);
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
         case MODE_HW_TEST:
@@ -242,7 +242,7 @@ int main(void)
           ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
           break;
         default:
-          ReportError(ModeUnknownMode,NULL/*"Unknown operation mode"*/);
+          ReportError(ModeUnknownMode,FSH("Unknown operation mode"));
           Settings.current_mode = MODE_DEFAULT;
           break;
       }
