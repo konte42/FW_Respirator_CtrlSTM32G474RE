@@ -109,6 +109,7 @@ void Error_Handler(void);
 #define MOTOR_INB_Pin GPIO_PIN_5
 #define MOTOR_INB_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
+#define TRAP_LOOP_DELAY_LENGTH  4000000
 
 /* USER CODE END Private defines */
 
