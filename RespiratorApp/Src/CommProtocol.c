@@ -5,6 +5,7 @@
  *  Author: maticpi
  */ 
 #include "CommProtocol.h"
+#include <stdio.h>
 
 #define ValidateAndApplyReceivedValue(typ, value, setting, min, max, err) \
 case typ: if ((value >= min ) && (value <= max ) ) {setting = value;} else {ReportError(err, FSH(""));} break
@@ -76,8 +77,8 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 	*(uint8_t *)p_msg = Status;
 	p_msg +=1;					
 
-	*(uint8_t *)p_msg = Error;
-	p_msg +=1;
+	*(uint16_t *)p_msg = Error;
+	p_msg +=2;
 	
 	*(float *)p_msg = target_value;
   p_msg +=4;
@@ -158,7 +159,8 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 		case 1: {//Waiting for PARAM
 			value=0;
 			switch (data){
-				case 'M':
+        case 's': //get status
+        case 'M':
 				case 'R':
 				case 'I':
 				case 'E':
@@ -179,7 +181,12 @@ void ProcessMessages(char data, RespSettings_t* Settings, uint8_t* newdata)
 				case '1':
 				case '2':
 				case '3':
-				case '4':
+        case '4':
+        case '5':
+        case '6':
+        case '7':
+        case '8':
+        case '9':
 				{
 					param = data;
 					state++;
@@ -249,8 +256,8 @@ ValidateAndApplyReceivedValue('I', value, Settings->target_inspiria_time, SETTIN
 ValidateAndApplyReceivedValue('E', value, Settings->target_expiria_time,  SETTINGS_EXPIRIA_TIME_MIN, SETTINGS_EXPIRIA_TIME_MAX, ComRxExpTmOutsideLimits);
 ValidateAndApplyReceivedValue('P', value, Settings->PEEP,					        SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
 
-ValidateAndApplyReceivedValue('T', value, Settings->PeakInspPressure,     SETTINGS_PEAK_PRESSURE_MIN, SETTINGS_PEAK_PRESSURE_MAX, ComRxPeakInspPressureOutsideLimits);
-ValidateAndApplyReceivedValue('t', value, Settings->MinInspPressure,      SETTINGS_MIN_PRESSURE_MIN, SETTINGS_MIN_PRESSURE_MAX, ComRxMinInspPressureOutsideLimits);
+ValidateAndApplyReceivedValue('T', value, Settings->limit_PeakInspPressure,     SETTINGS_PEAK_PRESSURE_MIN, SETTINGS_PEAK_PRESSURE_MAX, ComRxPeakInspPressureOutsideLimits);
+ValidateAndApplyReceivedValue('t', value, Settings->limit_InspPressure_min,      SETTINGS_MIN_PRESSURE_MIN, SETTINGS_MIN_PRESSURE_MAX, ComRxMinInspPressureOutsideLimits);
 ValidateAndApplyReceivedValue('S', value, Settings->target_pressure,      SETTINGS_TARGET_PRESSURE_MIN, SETTINGS_TARGET_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
 ValidateAndApplyReceivedValue('V', value, Settings->target_tidal_volume,  SETTINGS_TIDAL_VOLUME_MIN, SETTINGS_TIDAL_VOLUME_MAX, ComRxVolumeOutsideLimits);
 
@@ -268,13 +275,26 @@ ValidateAndApplyReceivedValue('B', value, Settings->limit_breath_rate_max,   SET
 ValidateAndApplyReceivedValue('1', value/100.0, Settings->PID_Pressure.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
 ValidateAndApplyReceivedValue('2', value/100.0, Settings->PID_Pressure.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
 ValidateAndApplyReceivedValue('3', value/100.0, Settings->PID_Pressure.D_Factor, SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
-ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,    SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
-ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
-ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
-ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,      SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
+//ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,    SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
+//ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
+//ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
+//ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,      SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
+ValidateAndApplyReceivedValue('4', value/100.0, Settings->PID_Flow.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
+ValidateAndApplyReceivedValue('5', value/100.0, Settings->PID_Flow.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
+ValidateAndApplyReceivedValue('6', value/100.0, Settings->PID_Flow.D_Factor, SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
+//ValidateAndApplyReceivedValue('4', value, Settings->PID_Pressure.maxError,    SETTINGS_PID_MAX_ERR_MIN, SETTINGS_PID_MAX_ERR_MAX, ComRxPIDmaxErrOutsideLimits);
+//ValidateAndApplyReceivedValue('5', value, Settings->PID_Pressure.maxSumError, SETTINGS_PID_MAX_SUM_ERR_MIN, SETTINGS_PID_MAX_SUM_ERR_MAX, ComRxPIDmaxSumErrOutsideLimits);
+//ValidateAndApplyReceivedValue('6', value, Settings->PID_Pressure.maxOut,      SETTINGS_PID_MAX_OUT_MIN, SETTINGS_PID_MAX_OUT_MAX, ComRxPIDmaxOutOutsideLimits);
+//ValidateAndApplyReceivedValue('7', value, Settings->PID_Pressure.minOut,      SETTINGS_PID_MIN_OUT_MIN, SETTINGS_PID_MIN_OUT_MAX, ComRxPIDminOutOutsideLimits);
+ValidateAndApplyReceivedValue('7', value/100.0, Settings->PID_Volume.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
+ValidateAndApplyReceivedValue('8', value/100.0, Settings->PID_Volume.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
+ValidateAndApplyReceivedValue('9', value/100.0, Settings->PID_Volume.D_Factor, SETTINGS_PID_D_MIN, SETTINGS_PID_D_MAX, ComRxPIDDOutsideLimits);
 				}
 				state = 0;
 				*newdata = 1;
+				char txt[50];
+				sprintf(txt,"R:>%c %ld ",param,value);
+        ReportError(DbgMsg,txt);
 			}
 			else
 			{
