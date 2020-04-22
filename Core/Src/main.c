@@ -98,7 +98,7 @@ int main(void)
 	#endif
     uint32_t mark2=0;
 	  uint8_t newSettingsReceived;
-
+	  ErrCodes_t err;
 	  /*
 	  RespSettings_t	Settings;
 	  MeasuredParams_t Measured;
@@ -106,6 +106,7 @@ int main(void)
 	  fpidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
 						  //Maybe make PID params local to ActuatorControl?
 */
+	  ErrQueue_Init(&DefaultErrorQueue);
 	  memset(&Settings,0,sizeof(RespSettings_t));
 	  memset(&Measured,0,sizeof(MeasuredParams_t));
 	  memset(&Control,0,sizeof(CtrlParams_t));
@@ -114,15 +115,25 @@ int main(void)
 	  //V končni verziji se to prebere iz eeproma,
 	  //da takoj nadaljujemo od koder smo končali,
 	  //če se slučajno pobiramo iz nenamernega reseta
-	  Settings.current_mode=MODE_DEFAULT;
+	  Settings.current_mode=MODE_STOP;
 	  Settings.new_mode=MODE_DEFAULT;
-	  Settings.target_Pramp_time=SETTINGS_DEFAULT_RAMPUP_TIME_MS;
+    Settings.trigger_pressure=SETTINGS_DEFAULT_INSP_TRIGGER;
+    Settings.target_Pramp_time=SETTINGS_DEFAULT_RAMPUP_TIME_MS;
 	  Settings.target_inspiria_time=SETTINGS_DEFAULT_INHALE_TIME_MS;
-	  Settings.target_expiria_time=SETTINGS_DEFAULT_EXHALE_TIME_MS;
+    Settings.target_expiria_time=SETTINGS_DEFAULT_EXHALE_TIME_MS;
+    Settings.limit_apnea_time_max=SETTINGS_DEFAULT_APNEA_LIMIT_TIME_MS;
 	  Settings.target_tidal_volume=SETTINGS_DEFAULT_TARGET_VOLUME_ML;
 	  Settings.PEEP = SETTINGS_DEFAULT_PEEP;
-	  Settings.PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
+	  Settings.limit_PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
     Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
+    Settings.limit_tidal_volume_min = SETTINGS_DEFAULT_MINUTE_VOLUME_MIN;
+    Settings.limit_tidal_volume_max = SETTINGS_DEFAULT_MINUTE_VOLUME_MAX;
+    Settings.limit_minute_volume_min = SETTINGS_DEFAULT_MINUTE_VOLUME_MIN;
+    Settings.limit_minute_volume_max = SETTINGS_DEFAULT_MINUTE_VOLUME_MAX;
+    Settings.limit_breath_rate_min = SETTINGS_DEFAULT_BREATH_RATE_MIN;
+    Settings.limit_breath_rate_max = SETTINGS_DEFAULT_BREATH_RATE_MAX;
+    Settings.limit_InspPressure_min = SETTINGS_DEFAULT_MIN_INSP_PRESSURE;
+    Settings.ETS = SETTINGS_DEFAULT_ETS;
 
     Settings.PID_Pressure.P_Factor = SETTINGS_DEFAULT_PRESSURE_PID_P;
     Settings.PID_Pressure.I_Factor = SETTINGS_DEFAULT_PRESSURE_PID_I;
@@ -139,6 +150,14 @@ int main(void)
     Settings.PID_Flow.maxSumError = SETTINGS_DEFAULT_FLOW_PID_MAXSUMERR;
     Settings.PID_Flow.maxOut = SETTINGS_DEFAULT_FLOW_PID_MAXOUT;
     Settings.PID_Flow.minOut = SETTINGS_DEFAULT_FLOW_PID_MINOUT;
+
+    Settings.PID_Volume.P_Factor = SETTINGS_DEFAULT_VOLUME_PID_P;
+    Settings.PID_Volume.I_Factor = SETTINGS_DEFAULT_VOLUME_PID_I;
+    Settings.PID_Volume.D_Factor = SETTINGS_DEFAULT_VOLUME_PID_D;
+    Settings.PID_Volume.maxError = SETTINGS_DEFAULT_VOLUME_PID_MAXERR;
+    Settings.PID_Volume.maxSumError = SETTINGS_DEFAULT_VOLUME_PID_MAXSUMERR;
+    Settings.PID_Volume.maxOut = SETTINGS_DEFAULT_VOLUME_PID_MAXOUT;
+    Settings.PID_Volume.minOut = SETTINGS_DEFAULT_VOLUME_PID_MINOUT;
 
 	  //TODO: read current state of the machine
 	  //Is it possible the get the exact state?
@@ -174,6 +193,7 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
   Ringbuf_Init();
   HAL_TIM_Base_Start(&htim1);
   HAL_ADC_Start_IT(&hadc1);
@@ -181,32 +201,12 @@ int main(void)
   HAL_ADC_Start_IT(&hadc3);
   MeasureInit();
   motor_Init();
-/*
-  motor_SetDir(MOTOR_DIR_VDIH);
-  int dc=0;
-  while (1)
-  {
-	dc+=MOTOR_MAX_DC/10;
-	if (dc>MOTOR_MAX_DC) dc=MOTOR_MAX_DC/10;
-
-	motor_SetDutyCycle(dc);
-	HAL_Delay(100);
-
-  }*/
 
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
-  /*while (1)
-  {
-    if (UART0_DataReady())
-    {
-      char data;
-      UART0_GetByte(&data);
-      UART0_put(data);
-    }
-  }*/
+
   while(1)
   {
     // na 2 ms
@@ -265,12 +265,13 @@ int main(void)
     if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
       //LED6_Tgl();
+      ErrQueue_GetErr(&err,&DefaultErrorQueue);
       mark2+=STATUS_REPORTING_PERIOD;
       length=PrepareStatusMessage(HAL_GetTick(),
            (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0),
            (int16_t)(Measured.volume_t*10.0), (int16_t)(motor_GetPosition()),
            (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter,
-           Control.status, Control.Error, Control.target_pressure, msg);
+           Control.status, err, Control.target_pressure, msg);
       UART0_SendBytes(msg,length);
     }
 
