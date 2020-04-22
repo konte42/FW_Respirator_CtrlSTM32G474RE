@@ -18,51 +18,38 @@ float FIRtargetP(float new_x, int reset, float reset_val);
 float FIRflow(float new_x, int reset, float reset_val);
 float AVG(float new_x, int reset, float reset_val);
 
-ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
-int16_t timing;
-uint16_t SETinsp_time;
-uint16_t SETexp_time;
-float SETInspTrig= 0.5;
-float SETpressure;
-float SETPrampPressure;
-float SETPrampStartPressure;
-float SET_PEEP;
-float MAXpressure;
-float MAXvolume;
-float SET_ETSfactor;
-uint16_t SETpramp_time;
-int16_t PreStartBoostTime;
-float PREP_CURRENT_START = 25;
-float PREP_CURRENT_MAX = 30;
-
-float PREP_T_TOTAL = 50;
-float PREP_T_START = 10;
-float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
-float PRESSURE_INCREMENT = 0.001; // cmH2O
-float Pramp_rate = 0;
-float FilteredPressure = 0;
-
-float MAXexpiriaFlow = 0;
-float MAXinspiriaFlow = 0;
-float FilteredFlow=0;
-
-
 #define MAX_PRAMP_TIME  200
-
 
 void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-/*	static int8_t dihanje_state = -1;
-	static int16_t timing;
-	static uint16_t SETinsp_time;
-	static uint16_t SETexp_time;
-	static float SETpressure;
-	static float SET_PEEP;
-	static float MAXpressure;
-	static float MAXvolume;
-	static uint16_t SETpramp_time;
-	static int16_t PreStartBoostTime;
-*/
+static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
+static  int16_t timing;
+static  uint16_t SETinsp_time;
+static  uint16_t SETapnea_time;
+static  float SETInspTrig= 1.0;
+static  float SETpressure;
+static  float SETPrampPressure;
+static  float SETPrampStartPressure;
+static  float SET_PEEP;
+static  float MAXpressure;
+static  float MAXvolume;
+static  float SET_ETSfactor;
+static  uint16_t SETpramp_time;
+static  int16_t PreStartBoostTime;
+static  float PREP_CURRENT_START = 10;  //25;
+static  float PREP_CURRENT_MAX = 20;    //30;
+
+static  float PREP_T_TOTAL = 50;
+static  float PREP_T_START = 10;
+static  float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
+static  float Pramp_rate = 0;
+static  float FilteredPressure = 0;
+
+//static  float MAXexpiriaFlow = 0;
+static  float MAXinspiriaFlow = 0;
+static  float FilteredFlow=0;
+
+
 	Control->status = dihanje_state;	// shrani stanje dihanja
 	
 	//State machine starts with exhalation.
@@ -81,12 +68,12 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
 	{
 		case MODE_STATE_FIRST_RUN:	//First time: init local settings, etc
       SETInspTrig = Settings->trigger_pressure/10.0;
-      SETinsp_time = Settings->target_inspiria_time;
-      SETexp_time = Settings->target_expiria_time;
+      SETinsp_time = MAX_PS_INSP_TIME;
+      SETapnea_time = Settings->limit_apnea_time_max;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
       SETpressure = Settings->target_pressure/10.0;
-      MAXpressure = Settings->PeakInspPressure/10.0;
+      MAXpressure = Settings->limit_PeakInspPressure/10.0;
       MAXvolume = Settings->target_tidal_volume;
       dihanje_state=MODE_STATE_EXP_START;
 		break;
@@ -97,7 +84,6 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
       Control->target_pressure = SET_PEEP;
       FIRtargetP(SET_PEEP,1,SET_PEEP);
       AVG(SET_PEEP,1,SET_PEEP);
-      MAXexpiriaFlow = 0;
       timing=0;
       dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
       LED1_Off();
@@ -124,7 +110,7 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
         dihanje_state=MODE_STATE_LOOK_FOR_INSP_TRIGGER;
       }
       //Backup trigger
-      if (timing > SETexp_time)     //backup trigger  reda 20 s
+      if (timing > SETapnea_time)     //backup trigger  reda 20 s
       {
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
@@ -141,7 +127,7 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
       }
 
       //Backup trigger
-      if (timing > SETexp_time)     //backup trigger  reda 20 s
+      if (timing > SETapnea_time)     //backup trigger  reda 20 s
       {
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
@@ -158,10 +144,10 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
         break;
       }
       SETInspTrig = Settings->trigger_pressure/10.0;
-      MAXpressure = Settings->PeakInspPressure/10.0;
+      MAXpressure = Settings->limit_PeakInspPressure/10.0;
       MAXvolume = Settings->limit_tidal_volume_max;
       SETinsp_time = MAX_PS_INSP_TIME;
-      SETexp_time = Settings->limit_apnea_time_max;
+      SETapnea_time = Settings->limit_apnea_time_max;
       SET_ETSfactor = Settings->ETS/100.0;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
@@ -172,7 +158,6 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
       SETPrampStartPressure = SETPrampPressure - SETpramp_time*Pramp_rate;
 
       //start cycle
-      MAXexpiriaFlow = 0;
       MAXinspiriaFlow = 0;
       Measured->volume_mode = VOLUME_INTEGRATE;
       Control->BreathCounter++;
@@ -216,7 +201,7 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
         Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
         Control->target_pressure = FIRtargetP(SETPrampStartPressure,0,0);
         dihanje_state=MODE_STATE_INSP_PRAMP;
-        SETexp_time = SETexp_time - PreStartBoostTime;
+        SETapnea_time = SETapnea_time - PreStartBoostTime;
         timing=0;
         LED3_Off();
         LED4_On();
@@ -226,7 +211,7 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
         Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
         Control->target_pressure = FIRtargetP(SETPrampPressure,0,0);
         //LED2_On();
-        SETexp_time = SETexp_time - (PreStartBoostTime + timing);
+        SETapnea_time = SETapnea_time - (PreStartBoostTime + timing);
         timing = 0;
         dihanje_state = MODE_STATE_INSP_CONST_P;	//direktno na const. pressure step
         LED3_Off();
@@ -243,6 +228,7 @@ void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* 
       {
         Control->target_pressure = FIRtargetP(SETPrampPressure,0,0);
         dihanje_state=MODE_STATE_INSP_CONST_P;
+        ReportError(DbgMsg,FSH("PS-ConstPressure..."));
         LED4_Off();
         LED5_On();
       }
