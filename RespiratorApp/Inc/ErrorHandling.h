@@ -12,6 +12,12 @@
 #include <inttypes.h>
 #include <stddef.h>
 
+#define DEFAULT_WARNING_THERSHOLD_LOW   2
+#define DEFAULT_WARNING_THERSHOLD_HIGH  4
+#define DEFAULT_ERROR_THERSHOLD_LOW     5
+#define DEFAULT_ERROR_THERSHOLD_HIGH    7
+#define DEFAULT_ERR_MAX_COUNT 10
+
 #define USE_DEFAULT_ERROR_REPORTER	1
 //Default Error reporter just stores errors in an Error Queue
 //Copy "void ReportError(ErrCodes_t ErrCode, char ErrMsg[])"
@@ -25,19 +31,13 @@
 //Error codes
 typedef enum ErrCodes
 {
-	NoError = 0x00,
-	//0x01 - 0x1F: Informational messages
+	NoError = 0x0000,
+	//0x01 - 0x001F: Informational messages
   ErrQueueEmpty = 0x01,    //This is ok - no errors
-  DbgMsg,
+  DbgMsg = 0x02,
 
-	//0x20 - 0x4F: Warnings (Medical)
-  Limits_InsufficientVolume = 0x20,
-  Limits_VolumeTooHigh,
-
-	//0x50 - 0x7F: Errors (Medical)
-
-  //0x80 - 0x9F: Communication errors
-  ComRxUnknownParameter = 0x80,
+  //0xA0 - 0xBF: Communication errors
+  ComRxUnknownParameter = 0xA0,
   ComRxNoSpaceAfterParam,
   ComRxExpectingNumber,
   ComRxNoEtx,
@@ -69,17 +69,58 @@ typedef enum ErrCodes
   ComRxPIDmaxOutOutsideLimits,
   ComRxPIDminOutOutsideLimits,
 
-  //0xA0 - 0xBF: System errors
-  ComRxBuffOverrun = 0xA0,
+  //0xC0 - 0xDF: System errors
+  ComRxBuffOverrun = 0xC0,
   ComRxUnknownState,
 
-  //0xC0 - 0xFF: System errors - critical
-	ActuatorCtrlUnknownMode = 0xC0,
-	ModeUnknownMode,
-	ModeCMV_UnknownState,
-	ModePCV_UnknownState,
-	ModePS_UnknownState
+  //0xE0 - 0xFF: System errors - critical
+  ActuatorCtrlUnknownMode = 0xE0,
+  ModeUnknownMode,
+  ModeCMV_UnknownState,
+  ModePCV_UnknownState,
+  ModePS_UnknownState,
+
+  //0x1000 - 0x15FF: Info (Medical)
+  InfoCycleEND_InspTime             = 0x1000,
+  Info_Limits_MinTidalVolume,
+  Info_Limits_MaxTidalVolume,
+  Info_Limits_PeakPressure,
+  Info_Limits_MaxPosition,
+  Info_Limits_MinPressure,
+	//0x2000 - 0x1FFF: Warnings (Medical)
+  Warning_Limits_PeakPreassure      = 0x2000,
+  Warning_Limits_MinPressure,
+  Warning_Limits_MinTidalVolume,
+  Warning_Limits_MaxTidalVolume,
+  WarningCycleEND_MaxMotorPosition,
+	//0x3000 - ...: Errors (Medical)
+  Error_Limits_PeakPreassure        = 0x3000,
+  Error_Limits_MinPressure,
+  Error_Limits_MinTidalVolume,
+  Error_Limits_MaxTidalVolume,
+  ErrorCycleEND_MaxMotorPosition
+
 } ErrCodes_t;
+
+typedef enum ERR_STATUS_T{
+  ERR_STATUS_OK,
+  ERR_STATUS_WARNING,
+  ERR_STATUS_ERROR
+} ErrStatus_t;
+
+typedef struct ERR_STATISTIC_T{
+  int cnt;
+  ErrStatus_t status;
+  int WarningLowThreshold;
+  int WarningHighThreshold;
+  int ErrorLowThreshold;
+  int ErrorHighThreshold;
+  int ErrMaxCount;
+  ErrCodes_t info;
+  ErrCodes_t warning;
+  ErrCodes_t error;
+} ErrStatistics_t;
+
 
 #define ERROR_QUEUE_LENGTH	50
 #define ERROR_QUEUE_STOP_WHEN_FULL	1
@@ -91,7 +132,11 @@ typedef struct ERR_QUEUE{
 	uint8_t QueueNum;						//Number of stored data in buffer
 } ErrQueue_t;
 
-ErrQueue_t DefaultErrorQueue;
+void IncError(ErrStatistics_t *err);
+void DecError(ErrStatistics_t *err);
+char* GetErrorString(ErrCodes_t errorCode);
+
+extern ErrQueue_t DefaultErrorQueue;
 
 void ErrQueue_Init(struct ERR_QUEUE *ErrQueue);
 void ErrQueue_StoreErr (ErrCodes_t ErrCode, struct ERR_QUEUE *ErrQueue);	//No point in returning error - who to? This is the error handling code.

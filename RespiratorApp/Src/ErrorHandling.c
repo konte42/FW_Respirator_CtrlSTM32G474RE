@@ -11,6 +11,84 @@
 #include "main.h"
 extern UART_HandleTypeDef hlpuart1;
 
+void IncError(ErrStatistics_t *err)
+{
+  err->cnt++;
+  if (err->cnt > err->ErrMaxCount) err->cnt = err->ErrMaxCount;
+
+  if (err->status == ERR_STATUS_OK)
+  {
+      if (err->cnt > err->WarningHighThreshold)
+      {
+        err->status = ERR_STATUS_WARNING;
+      }
+  }
+  else if (err->status == ERR_STATUS_WARNING)
+  {
+    if (err->cnt > err->ErrorHighThreshold)
+    {
+      err->status = ERR_STATUS_ERROR;
+    }
+  }
+
+  if (err->status == ERR_STATUS_WARNING)
+  {
+    ReportError(err->warning,GetErrorString(err->warning));
+  }
+  else if (err->status == ERR_STATUS_ERROR)
+  {
+    ReportError(err->error,GetErrorString(err->error));
+  }
+  else
+  {
+    ReportError(err->info,GetErrorString(err->info));
+  }
+}
+
+void DecError(ErrStatistics_t *err)
+{
+  err->cnt--;
+  if (err->cnt < 0) err->cnt = 0;
+
+  if (err->status == ERR_STATUS_WARNING)
+  {
+    if (err->cnt < err->WarningLowThreshold)
+    {
+      err->status = ERR_STATUS_OK;
+    }
+  }
+  else if (err->status == ERR_STATUS_ERROR)
+  {
+    if (err->cnt < err->ErrorLowThreshold)
+    {
+      err->status = ERR_STATUS_WARNING;
+    }
+  }
+
+  if (err->status == ERR_STATUS_WARNING)
+  {
+    ReportError(err->warning,GetErrorString(err->warning));
+  }
+  else if (err->status == ERR_STATUS_ERROR)
+  {
+    ReportError(err->error,GetErrorString(err->error));
+  }
+}
+
+char* GetErrorString(ErrCodes_t errorCode)
+{
+  char* ptr_str;
+  switch (errorCode)
+  {
+    case Warning_Limits_PeakPreassure: ptr_str=FSH("Warning:Peak Insp. Preasure! "); break;
+    case Error_Limits_PeakPreassure: ptr_str=FSH("Error:Peak Insp. Preasure! "); break;
+    default: ptr_str=NULL; break;
+  }
+  return ptr_str;
+}
+
+ErrQueue_t DefaultErrorQueue;
+
 void ErrQueue_Init(struct ERR_QUEUE *ErrQueue)
 {
 	ErrQueue->QueueIn = 0;
