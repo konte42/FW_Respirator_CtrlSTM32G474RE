@@ -7,39 +7,41 @@
 //Opisi mode, da vemo kaj pocnemo
 
 //Pri lovljenju ustreznega volumna ima prednost �AS (Target inspiratory time)
+#include <stdio.h>
 #include <modeCMV.h>
 #include "Measure.h"
 #include "GPIO.h"
 
 float FIR(float new_x, int reset, float reset_val);
 
+ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
+int16_t timing;
+uint16_t SETinsp_time;
+uint16_t SETexp_time;
+uint16_t SETpramp_time;
+int16_t PreStartBoostTime;
+float PREP_CURRENT_START = 0;
+float PREP_CURRENT_MAX = 10;
+float PREP_T_TOTAL = 50;
+float PREP_T_START = 10;
+float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
+
+float SET_PEEP;
+float MAXpressure;
+float PressureSafetyMargin = 5;
+
+float TargetVolume = 0;
+float TargetFlow = 0;
+float StartFlow = 0;
+float Pramp_rate = 0;
+float InertiaVolume = 0;
 
 #define MAX_PRAMP_TIME  200
 
 void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
 
-  static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
-  static  int16_t timing;
-  static  uint16_t SETinsp_time;
-  static  uint16_t SETexp_time;
-  static  uint16_t SETpramp_time;
-  static  int16_t PreStartBoostTime;
-  static  float PREP_CURRENT_START = 25;
-  static  float PREP_CURRENT_MAX = 30;
-  static  float PREP_T_TOTAL = 50;
-  static  float PREP_T_START = 10;
-  static  float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
 
-  static  float SET_PEEP;
-  static  float MAXpressure;
-  static  float PressureSafetyMargin = 5;
-
-  static  float TargetVolume = 0;
-  static  float TargetFlow = 0;
-  static  float StartFlow = 0;
-  static  float Pramp_rate = 0;
-  static  float InertiaVolume = 0;
 
   Control->status = dihanje_state;  // shrani stanje dihanja
 
@@ -55,7 +57,7 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
-      MAXpressure = Settings->PeakInspPressure/10.0;
+      MAXpressure = Settings->limit_PeakInspPressure/10.0;
       TargetVolume = Settings->target_tidal_volume;
       dihanje_state=MODE_STATE_EXP_START;
     break;
@@ -63,7 +65,7 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
     case MODE_STATE_EXP_START: // zacetek vdiha, preveri, ce so klesce narazen, sicer jih daj narazen
       Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
       Control->target_position  = 0;
-      Control->target_pressure = SET_PEEP;
+      Control->target_flow = 0;
       FIR(0,1,0);
       timing=0;
       dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
@@ -106,21 +108,24 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       SETexp_time = Settings->target_expiria_time;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
-      MAXpressure = Settings->PeakInspPressure/10.0;
+      MAXpressure = Settings->limit_PeakInspPressure/10.0;
       TargetVolume = Settings->target_tidal_volume;     //
 
       TargetFlow = TargetVolume / SETinsp_time * 60.0;         //  ml/ms * 60 = l/min
-      Pramp_rate = (TargetFlow * 0.75 )/ MAX_PRAMP_TIME;
-      StartFlow = TargetFlow - SETpramp_time*Pramp_rate;;
+//      Pramp_rate = (TargetFlow * 0.75 )/ MAX_PRAMP_TIME;
+//      StartFlow = TargetFlow - SETpramp_time*Pramp_rate;
+      Pramp_rate = TargetFlow/SETpramp_time;
+      StartFlow = 0;
       //InertiaVolume = 0;
 
       //start cycle
       Measured->volume_mode = VOLUME_INTEGRATE;
       Control->BreathCounter++;
-      Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET;
-      Control->target_speed = PREP_CURRENT_START;  //20%
+      Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME_PID_RESET;
+      Control->target_volume = 0;
+      Control->target_flow = StartFlow;
+      Control->target_speed = PREP_CURRENT_START;
       PreStartBoostTime = PREP_T_TOTAL;
-//      PreStartBoostTime = 23 - SETpramp_time/20;
       timing=0;
       LED1_On();
       dihanje_state=MODE_STATE_INSP_PREP_1;
@@ -162,7 +167,7 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
         LED3_Off();
         LED4_On();
       }
-      //TODO: FIGURE OUT EXACTLY WHAT OT DO WHEN FLOW CAN NOT BE ACHIEVED
+      //TODO: FIGURE OUT EXACTLY WHAT TO DO WHEN FLOW CAN NOT BE ACHIEVED
       if (Measured->pressure > (MAXpressure - PressureSafetyMargin))
       {
         Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
@@ -183,11 +188,42 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
     if (timing >= SETpramp_time)  // gremo v constant pressure
     {
       Control->target_flow = FIR(TargetFlow,0,0);
-      dihanje_state=MODE_STATE_INSP_CONST_P;
+      dihanje_state=MODE_STATE_INSP_CONST_F;
+      ReportError(DbgMsg,"CFlow...");
     }
+    Control->target_volume += Control->target_flow/60.0;
     break;
 
 //Constant Flow ////////////////////////////////////////
+    case MODE_STATE_INSP_CONST_F: //cakaj da mine INHALE_TIME ali da motor pride do konca
+      timing += TIME_SLICE_MS;
+      Control->target_flow=FIR(TargetFlow,0,0);
+      Control->target_volume += Control->target_flow/60.0;
+      // ce je prisel do konca, zakljuci cikel vdiha
+      if (Measured->volume_t > (TargetVolume-InertiaVolume) )
+      {
+          ReportError(DbgMsg,"Volume reached");
+        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_VOL;
+      }
+      //Alternate condition - max volume reached. Should probably issue a warning
+      if (timing > SETinsp_time)
+      {
+          ReportError(DbgMsg,"Insp time reached");
+        dihanje_state=MODE_STATE_EXP_START;
+      }
+      if (Measured->pressure > MAXpressure)
+      {
+          ReportError(DbgMsg,"Pressure reached");
+        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_PRESSURE;
+      }
+      //Errors:
+      if (Control->cur_position >= CTRL_PAR_MAX_POSITION) //Came too far - wait in this position until insp
+      {
+          ReportError(DbgMsg,"Position reached");
+        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_POS;
+      }
+      break;
+//Constant Pressure ////////////////////////////////////////
     case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
       timing += TIME_SLICE_MS;
       Control->target_flow=FIR(TargetFlow,0,0);
@@ -200,8 +236,6 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       if (timing > SETinsp_time)
       {
         dihanje_state=MODE_STATE_EXP_START;
-        LED5_Off();
-        LED6_On();
       }
       if (Measured->pressure > MAXpressure)
       {
@@ -213,7 +247,7 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
         dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_POS;
       }
       break;
-
+//Endings//////////////////////////////
     case MODE_STATE_INSP_COMPLETE_MAX_VOL: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
       timing += TIME_SLICE_MS;
       Control->mode = CTRL_PAR_MODE_STOP;
