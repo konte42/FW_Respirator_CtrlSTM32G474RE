@@ -183,16 +183,16 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 //P-ramp  ///////////////////////////////////////////////////
 
     case MODE_STATE_INSP_PRAMP: //P-ramp
-    timing += TIME_SLICE_MS;
-    Control->target_flow = FIR(StartFlow + Pramp_rate*timing,0,0);
-    if (timing >= SETpramp_time)  // gremo v constant pressure
-    {
-      Control->target_flow = FIR(TargetFlow,0,0);
-      dihanje_state=MODE_STATE_INSP_CONST_F;
-      ReportError(DbgMsg,"CFlow...");
-    }
-    Control->target_volume += Control->target_flow/60.0;
-    break;
+      timing += TIME_SLICE_MS;
+      Control->target_flow = FIR(StartFlow + Pramp_rate*timing,0,0);
+      if (timing >= SETpramp_time)  // gremo v constant pressure
+      {
+        Control->target_flow = FIR(TargetFlow,0,0);
+        dihanje_state=MODE_STATE_INSP_CONST_F;
+        ReportError(DbgMsg,"CFlow...");
+      }
+      Control->target_volume += Control->target_flow/60.0;
+      break;
 
 //Constant Flow ////////////////////////////////////////
     case MODE_STATE_INSP_CONST_F: //cakaj da mine INHALE_TIME ali da motor pride do konca

@@ -71,7 +71,6 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
   static float AvgBPM;          //čez 6 ciklov
   static float AvgMinuteVolume; //čez 6 ciklov
 
-  float BPM;
   float MinuteVolume;
 
 	Control->status = dihanje_state;	// shrani stanje dihanja
@@ -114,8 +113,6 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       timing += TIME_SLICE_MS;
       if (timing > (SETexp_time-Measured_PreStartTime))
       {
-        BPM = 60000 / (Measured_PreStartTime + Measured_PrampTime + Measured_InspTime + Measured_ExpTime);
-        MinuteVolume = Measured->volume_t * BPM;
         //TODO: Report Expiria Statistics Here
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
