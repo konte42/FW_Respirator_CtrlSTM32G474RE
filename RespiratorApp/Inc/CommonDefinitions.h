@@ -23,6 +23,10 @@
 #endif
 #define STATUS_REPORTING_PERIOD	10	// ms
 
+#define METRICS_MAX_HIST_LENGTH   12
+#define METRICS_MIN_HIST_LENGTH   3
+#define METRICS_MAX_HIST_TIME     60000
+
 #define MODE_DEFAULT	0	//Kateri je default?
 #define MODE_STOP	    0
 #define MODE_CMV	    1
