@@ -98,6 +98,7 @@ void Error_Handler(void);
 #define MOTOR_SEL0_GPIO_Port GPIOA
 #define SWA_Pin GPIO_PIN_10
 #define SWA_GPIO_Port GPIOA
+#define SWA_EXTI_IRQn EXTI15_10_IRQn
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
 #define T_SWCLK_Pin GPIO_PIN_14
@@ -108,6 +109,8 @@ void Error_Handler(void);
 #define MOTOR_INA_GPIO_Port GPIOB
 #define MOTOR_INB_Pin GPIO_PIN_5
 #define MOTOR_INB_GPIO_Port GPIOB
+#define BUZZ_Pin GPIO_PIN_6
+#define BUZZ_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define TRAP_LOOP_DELAY_LENGTH  4000000
 

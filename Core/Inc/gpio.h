@@ -61,6 +61,10 @@
 #define LED7_Off()	HAL_GPIO_WritePin(LED7_GPIO_Port,LED7_Pin,GPIO_PIN_RESET)
 #define LED7_Tgl()	HAL_GPIO_TogglePin(LED7_GPIO_Port,LED7_Pin)
 
+#define BUZZ_On()  HAL_GPIO_WritePin(BUZZ_GPIO_Port,BUZZ_Pin,GPIO_PIN_SET)
+#define BUZZ_Off()  HAL_GPIO_WritePin(BUZZ_GPIO_Port,BUZZ_Pin,GPIO_PIN_RESET)
+#define BUZZ_Tgl()  HAL_GPIO_TogglePin(BUZZ_GPIO_Port,BUZZ_Pin)
+
 /* USER CODE END Private defines */
 
 void MX_GPIO_Init(void);

@@ -201,7 +201,7 @@ int main(void)
   HAL_ADC_Start_IT(&hadc3);
   MeasureInit();
   motor_Init();
-
+  BUZZ_Off();
   /* USER CODE END 2 */
 
   /* Infinite loop */
