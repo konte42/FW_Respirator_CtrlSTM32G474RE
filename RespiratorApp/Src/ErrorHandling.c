@@ -111,7 +111,11 @@ void ErrQueue_StoreErr (ErrCodes_t ErrCode, struct ERR_QUEUE *ErrQueue)
 
 ErrCodes_t ErrQueue_GetErr (ErrCodes_t* ErrCode, struct ERR_QUEUE *ErrQueue)
 {
-	if(ErrQueue->QueueNum <= 0) return ErrQueueEmpty;
+	if(ErrQueue->QueueNum <= 0)
+  {
+	  *ErrCode = NoError;
+	  return ErrQueueEmpty;
+  }
 
 	*ErrCode = ErrQueue->ErrorQueue[ErrQueue->QueueOut];
 	ErrQueue->QueueNum--;
