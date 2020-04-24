@@ -28,6 +28,7 @@ uint16_t ADC_results[5]={0,0,0,0,0};	// interni rezultati - double buffering
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
+#ifdef PROTOTYPE_V1
   if (hadc->Instance == ADC1)
   {
 	  if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
@@ -50,6 +51,32 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
 	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
   }
+#elif defined(PROTOTYPE_V2)
+  if (hadc->Instance == ADC1)
+  {
+    if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
+    else ADCstage=1;
+    if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR;
+    else      ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
+  }
+  else if (hadc->Instance == ADC2)
+  {
+    if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
+    else ADCstage=1;
+    if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
+    else
+    {
+      ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
+      ADC_complete=1;
+    }
+  }
+  else if (hadc->Instance == ADC3)
+  {
+    //ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
+  }
+#else
+#error Prototype version not defined.
+#endif
 }
 
 void ADC_Init()
@@ -264,13 +291,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef* adcHandle)
     __HAL_RCC_GPIOC_CLK_ENABLE();
     __HAL_RCC_GPIOA_CLK_ENABLE();
     /**ADC1 GPIO Configuration    
+    PC0     ------> ADC1_IN6
     PC1     ------> ADC1_IN7
     PA0     ------> ADC1_IN1 
     */
-    GPIO_InitStruct.Pin = FLOW_N_Pin;
+    GPIO_InitStruct.Pin = ADC1_IN6_REFERENCA_Pin|FLOW_N_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(FLOW_N_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = FLOW_P_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
@@ -353,10 +381,11 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef* adcHandle)
     }
   
     /**ADC1 GPIO Configuration    
+    PC0     ------> ADC1_IN6
     PC1     ------> ADC1_IN7
     PA0     ------> ADC1_IN1 
     */
-    HAL_GPIO_DeInit(FLOW_N_GPIO_Port, FLOW_N_Pin);
+    HAL_GPIO_DeInit(GPIOC, ADC1_IN6_REFERENCA_Pin|FLOW_N_Pin);
 
     HAL_GPIO_DeInit(FLOW_P_GPIO_Port, FLOW_P_Pin);
 
