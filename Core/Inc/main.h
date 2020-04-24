@@ -61,9 +61,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define B1_Pin GPIO_PIN_13
 #define B1_GPIO_Port GPIOC
-#define B1_EXTI_IRQn EXTI15_10_IRQn
-#define SWB_Pin GPIO_PIN_0
-#define SWB_GPIO_Port GPIOC
+#define ADC1_IN6_REFERENCA_Pin GPIO_PIN_0
+#define ADC1_IN6_REFERENCA_GPIO_Port GPIOC
 #define FLOW_N_Pin GPIO_PIN_1
 #define FLOW_N_GPIO_Port GPIOC
 #define FLOW_P_Pin GPIO_PIN_0
@@ -84,6 +83,8 @@ void Error_Handler(void);
 #define LED4_GPIO_Port GPIOB
 #define LED3_Pin GPIO_PIN_2
 #define LED3_GPIO_Port GPIOB
+#define MAINS_BAT1_Pin GPIO_PIN_10
+#define MAINS_BAT1_GPIO_Port GPIOB
 #define LED2_Pin GPIO_PIN_11
 #define LED2_GPIO_Port GPIOB
 #define LED1_Pin GPIO_PIN_12
@@ -94,11 +95,14 @@ void Error_Handler(void);
 #define LED6_GPIO_Port GPIOB
 #define LED5_Pin GPIO_PIN_15
 #define LED5_GPIO_Port GPIOB
+#define SWB_Pin GPIO_PIN_9
+#define SWB_GPIO_Port GPIOC
+#define MAINS_BAT2_Pin GPIO_PIN_8
+#define MAINS_BAT2_GPIO_Port GPIOA
 #define MOTOR_SEL0_Pin GPIO_PIN_9
 #define MOTOR_SEL0_GPIO_Port GPIOA
 #define SWA_Pin GPIO_PIN_10
 #define SWA_GPIO_Port GPIOA
-#define SWA_EXTI_IRQn EXTI15_10_IRQn
 #define T_SWDIO_Pin GPIO_PIN_13
 #define T_SWDIO_GPIO_Port GPIOA
 #define T_SWCLK_Pin GPIO_PIN_14
