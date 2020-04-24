@@ -65,6 +65,9 @@
 #define BUZZ_Off()  HAL_GPIO_WritePin(BUZZ_GPIO_Port,BUZZ_Pin,GPIO_PIN_RESET)
 #define BUZZ_Tgl()  HAL_GPIO_TogglePin(BUZZ_GPIO_Port,BUZZ_Pin)
 
+#define is_SWA() HAL_GPIO_ReadPin(SWA_GPIO_Port, SWA_Pin)
+#define is_SWB() HAL_GPIO_ReadPin(SWB_GPIO_Port, SWB_Pin)
+
 /* USER CODE END Private defines */
 
 void MX_GPIO_Init(void);
