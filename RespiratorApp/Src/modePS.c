@@ -22,6 +22,26 @@ float AVG(float new_x, int reset, float reset_val);
 
 void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
+  static ErrStatistics_t  Err_Limit_PeakPreasure={0,ERR_STATUS_OK,
+      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+      Info_Limits_PeakPressure,Warning_Limits_PeakPreassure,Error_Limits_PeakPreassure};
+
+  static ErrStatistics_t  Err_Limit_MaxTidalVolume={0,ERR_STATUS_OK,
+      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+      Info_Limits_MaxTidalVolume,Warning_Limits_MaxTidalVolume,Error_Limits_MaxTidalVolume};
+
+  static ErrStatistics_t  Err_Limit_MinPressure={0,ERR_STATUS_OK,
+      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+      Info_Limits_MinPressure,Warning_Limits_MinPressure,Error_Limits_PeakPreassure};
+
+  static ErrStatistics_t  Err_Limit_MinTidalVolume={0,ERR_STATUS_OK,
+      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+      Info_Limits_MinTidalVolume,Warning_Limits_MinTidalVolume,Error_Limits_MinTidalVolume};
+
 static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
 static  int16_t timing;
 static  uint16_t SETinsp_time;
@@ -31,7 +51,9 @@ static  float SETpressure;
 static  float SETPrampPressure;
 static  float SETPrampStartPressure;
 static  float SET_PEEP;
+static  float MINpressure;
 static  float MAXpressure;
+static  float MINvolume;
 static  float MAXvolume;
 static  float SET_ETSfactor;
 static  uint16_t SETpramp_time;
@@ -49,6 +71,14 @@ static  float FilteredPressure = 0;
 static  float MAXinspiriaFlow = 0;
 static  float FilteredFlow=0;
 
+static uint16_t Measured_ExpTime=0;
+static uint16_t Measured_InspTime=0;
+static uint16_t Measured_PrampTime=0;
+static uint16_t Measured_PreStartTime=0;
+static float MaxMeasuredVolume;
+static float sumAirwayPressure;
+static float peakExpFlow;
+
 
 	Control->status = dihanje_state;	// shrani stanje dihanja
 	
@@ -61,7 +91,6 @@ static  float FilteredFlow=0;
 	if (dihanje_state >= MODE_STATE_INSP_CONST_P)
   {
     if (FilteredFlow > MAXinspiriaFlow) MAXinspiriaFlow = FilteredFlow;
-//    printf("%.1f %.1f \r\n",MAXinspiriaFlow, FilteredFlow);
   }
 
 	switch (dihanje_state)
@@ -84,27 +113,32 @@ static  float FilteredFlow=0;
       Control->target_pressure = SET_PEEP;
       FIRtargetP(SET_PEEP,1,SET_PEEP);
       AVG(SET_PEEP,1,SET_PEEP);
+      Measured_InspTime=timing;
+      if (Measured->volume_t > MaxMeasuredVolume) MaxMeasuredVolume = Measured->volume_t;
+      peakExpFlow=0;
       timing=0;
+      //Report Inspiria Statistics
+      MetricsStoreInspTime(Measured_InspTime+Measured_PrampTime);
+      MetricsStoreMAP(sumAirwayPressure/(Measured_InspTime+Measured_PrampTime));
       dihanje_state=MODE_STATE_EXP_ZERO_POS_WAIT;
-      LED1_Off();
-      LED2_Off();
-      LED3_Off();
-      LED4_Off();
-      LED5_Off();
-      LED6_Off();
-      LED7_Off();
 		break;
 		
 		case MODE_STATE_EXP_ZERO_POS_WAIT: // cakaj, da so klesce narazen
       timing += TIME_SLICE_MS;
+      if (Measured->volume_t > MaxMeasuredVolume) MaxMeasuredVolume = Measured->volume_t;
+      if (Measured->flow < peakExpFlow) peakExpFlow = Measured->flow;
       if (Control->mode == CTRL_PAR_MODE_STOP)
       {
+        //Report TidalVolume after the motor reached starting position
+        MetricsStoreVt(MaxMeasuredVolume);  //Volume might still continue to rise a bit after stopping the motor
+        Control->ReportReady |= (1<<CTR_REPRDY_INSP);
         dihanje_state=MODE_STATE_EXP_WAIT;
       }
 		break;
 
 		case MODE_STATE_EXP_WAIT: // cakaj na naslednji vdih
       timing += TIME_SLICE_MS;
+      if (Measured->flow < peakExpFlow) peakExpFlow = Measured->flow;
       if (Measured->flow > MIN_FLOW_TO_START_MONITORING)
       {
         dihanje_state=MODE_STATE_LOOK_FOR_INSP_TRIGGER;
@@ -112,6 +146,14 @@ static  float FilteredFlow=0;
       //Backup trigger
       if (timing > SETapnea_time)     //backup trigger  reda 20 s
       {
+        Measured_ExpTime=timing;
+        //TODO: Report Expiria Statistics Here
+        MetricsStoreExpTime(Measured_ExpTime);
+        MetricsStorePEF(-peakExpFlow);
+                //MetricsStoreRCexp();
+        MetricsStoreBreathTrigger(HAL_GetTick(), TRIG_TYPE_TIME);
+        MetricsNextCycle();
+        Control->ReportReady |= (1<<CTR_REPRDY_EXP);
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
       }
@@ -119,9 +161,17 @@ static  float FilteredFlow=0;
 		
 		case MODE_STATE_LOOK_FOR_INSP_TRIGGER:
       timing += TIME_SLICE_MS;
-
+      if (Measured->flow < peakExpFlow) peakExpFlow = Measured->flow;
       if ( (FilteredPressure - Measured->pressure) > SETInspTrig )
       {
+        Measured_ExpTime=timing;
+        //TODO: Report Expiria Statistics Here
+        MetricsStoreExpTime(Measured_ExpTime);
+        MetricsStorePEF(-peakExpFlow);
+                //MetricsStoreRCexp();
+        MetricsStoreBreathTrigger(HAL_GetTick(), TRIG_TYPE_PRESSURE_TRIGGER);
+        MetricsNextCycle();
+        Control->ReportReady |= (1<<CTR_REPRDY_EXP);
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
       }
@@ -129,6 +179,14 @@ static  float FilteredFlow=0;
       //Backup trigger
       if (timing > SETapnea_time)     //backup trigger  reda 20 s
       {
+        Measured_ExpTime=timing;
+        //TODO: Report Expiria Statistics Here
+        MetricsStoreExpTime(Measured_ExpTime);
+        MetricsStorePEF(-peakExpFlow);
+                //MetricsStoreRCexp();
+        MetricsStoreBreathTrigger(HAL_GetTick(), TRIG_TYPE_TIME);
+        MetricsNextCycle();
+        Control->ReportReady |= (1<<CTR_REPRDY_EXP);
         Measured->volume_mode = VOLUME_RESET;
         dihanje_state=MODE_STATE_INSP_INIT;
       }
@@ -143,9 +201,12 @@ static  float FilteredFlow=0;
         dihanje_state = MODE_STATE_FIRST_RUN;
         break;
       }
-      SETInspTrig = Settings->trigger_pressure/10.0;
+      MINpressure =  Settings->limit_InspPressure_min/10.0;
       MAXpressure = Settings->limit_PeakInspPressure/10.0;
+      MINvolume = Settings->limit_tidal_volume_min;
       MAXvolume = Settings->limit_tidal_volume_max;
+
+      SETInspTrig = Settings->trigger_pressure/10.0;
       SETinsp_time = MAX_PS_INSP_TIME;
       SETapnea_time = Settings->limit_apnea_time_max;
       SET_ETSfactor = Settings->ETS/100.0;
@@ -157,6 +218,13 @@ static  float FilteredFlow=0;
       Pramp_rate = (SETPrampPressure - SET_PEEP - (SETPrampPressure-SET_PEEP)/4)/ MAX_PRAMP_TIME;
       SETPrampStartPressure = SETPrampPressure - SETpramp_time*Pramp_rate;
 
+      Measured_PreStartTime=0;
+      Measured_PrampTime=0;
+      Measured_InspTime=0;
+      Measured_ExpTime=0;
+      MaxMeasuredVolume=0;
+      sumAirwayPressure=0;
+
       //start cycle
       MAXinspiriaFlow = 0;
       Measured->volume_mode = VOLUME_INTEGRATE;
@@ -164,9 +232,7 @@ static  float FilteredFlow=0;
       Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET;
       Control->target_speed = PREP_CURRENT_START;  //20%
       PreStartBoostTime = PREP_T_TOTAL;
-//      PreStartBoostTime = 23 - SETpramp_time/20;
       timing=0;
-      LED1_On();
       dihanje_state=MODE_STATE_INSP_PREP_1;
     break;
 
@@ -176,8 +242,6 @@ static  float FilteredFlow=0;
       if (timing >= PREP_T_START)
       {
         dihanje_state=MODE_STATE_INSP_PREP_2;
-        LED1_Off();
-        LED2_On();
       }
       break;
 
@@ -188,9 +252,6 @@ static  float FilteredFlow=0;
       {
         Control->target_speed = PREP_CURRENT_MAX;
         dihanje_state=MODE_STATE_INSP_PREP_3;
-        LED2_Off();
-        LED3_On();
-
       }
       break;
 
@@ -200,23 +261,20 @@ static  float FilteredFlow=0;
       {
         Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
         Control->target_pressure = FIRtargetP(SETPrampStartPressure,0,0);
-        dihanje_state=MODE_STATE_INSP_PRAMP;
+        Measured_PreStartTime=timing;
         SETapnea_time = SETapnea_time - PreStartBoostTime;
         timing=0;
-        LED3_Off();
-        LED4_On();
+        dihanje_state=MODE_STATE_INSP_PRAMP;
       }
       if (Measured->pressure > SETpressure)
       {
         Control->mode = CTRL_PAR_MODE_REGULATE_PRESSURE;
         Control->target_pressure = FIRtargetP(SETPrampPressure,0,0);
-        //LED2_On();
         SETapnea_time = SETapnea_time - (PreStartBoostTime + timing);
+        Measured_PrampTime=0;
+        Measured_PreStartTime=timing;
         timing = 0;
         dihanje_state = MODE_STATE_INSP_CONST_P;	//direktno na const. pressure step
-        LED3_Off();
-        LED4_On();
-        LED7_On();
       }
       break;
 
@@ -224,13 +282,14 @@ static  float FilteredFlow=0;
 		case MODE_STATE_INSP_PRAMP: //P-ramp
       timing += TIME_SLICE_MS;
       Control->target_pressure = FIRtargetP(SETPrampStartPressure + Pramp_rate*timing,0,0);
+      sumAirwayPressure += Measured->pressure;
       if (timing >= SETpramp_time)  // gremo v constant pressure
       {
         Control->target_pressure = FIRtargetP(SETPrampPressure,0,0);
+        Measured_PrampTime=timing;
+        timing = 0;
         dihanje_state=MODE_STATE_INSP_CONST_P;
         ReportError(DbgMsg,FSH("PS-ConstPressure..."));
-        LED4_Off();
-        LED5_On();
       }
       break;
 
@@ -238,65 +297,65 @@ static  float FilteredFlow=0;
 		case MODE_STATE_INSP_CONST_P: //cakaj da mine INHALE_TIME ali da motor pride do konca
       timing += TIME_SLICE_MS;
       Control->target_pressure=FIRtargetP(SETPrampPressure,0,0);
+      if (Measured->volume_t > MaxMeasuredVolume) MaxMeasuredVolume = Measured->volume_t;
+      sumAirwayPressure += Measured->pressure;
       // Finish inspiria cycle when ETS threshold is reached
-
       if (FilteredFlow < MAXinspiriaFlow*SET_ETSfactor)
       {
           ReportError(DbgMsg,FSH("ETS reached"));
+          DecError(&Err_Limit_PeakPreasure);
+          DecError(&Err_Limit_MaxTidalVolume);
+          if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+          else DecError(&Err_Limit_MinPressure);
+          if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
+          else DecError(&Err_Limit_MinTidalVolume);
           dihanje_state=MODE_STATE_EXP_START;
-          Control->mode = CTRL_PAR_MODE_STOP;
       }
 
-      //Alternate condition - max volume reached. Should probably issue a warning
+      //Alternate condition
       if (timing > SETinsp_time)
       {
           ReportError(DbgMsg,FSH("Max time reached."));
-          dihanje_state=MODE_STATE_EXP_START;
-          Control->mode = CTRL_PAR_MODE_STOP;
+          DecError(&Err_Limit_PeakPreasure);
+          DecError(&Err_Limit_MaxTidalVolume);
+          if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+          else DecError(&Err_Limit_MinPressure);
+          if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
+          else DecError(&Err_Limit_MinTidalVolume);
+          dihanje_state = MODE_STATE_EXP_START;
       }
       if (Measured->volume_t > MAXvolume)
       {
-          ReportError(DbgMsg,FSH("Max Volume reached."));
-        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_VOL;
-        Control->mode = CTRL_PAR_MODE_STOP;
+        DecError(&Err_Limit_PeakPreasure);
+        IncError(&Err_Limit_MaxTidalVolume);
+        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+        else DecError(&Err_Limit_MinPressure);
+        dihanje_state=MODE_STATE_EXP_START;
       }
       if (Measured->pressure > MAXpressure)
       {
-          ReportError(DbgMsg,FSH("Max Pressure reached"));
-        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_PRESSURE;
-        Control->mode = CTRL_PAR_MODE_STOP;
+        DecError(&Err_Limit_MaxTidalVolume);
+        IncError(&Err_Limit_PeakPreasure);
+        if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
+        else DecError(&Err_Limit_MinTidalVolume);
+        dihanje_state=MODE_STATE_EXP_START;
       }
       //Errors:
       if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
       {
-          ReportError(DbgMsg,FSH("Max Position reached"));
-        dihanje_state = MODE_STATE_INSP_COMPLETE_MAX_POS;
-        Control->mode = CTRL_PAR_MODE_STOP;
+        ReportError(Info_Limits_MaxPosition,FSH("Max Motor Position"));
+        DecError(&Err_Limit_PeakPreasure);
+        DecError(&Err_Limit_MaxTidalVolume);
+        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+        else DecError(&Err_Limit_MinPressure);
+        if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
+        else DecError(&Err_Limit_MinTidalVolume);
+        dihanje_state = MODE_STATE_EXP_START;
       }
-      break;
-
-    case MODE_STATE_INSP_COMPLETE_ETS_TRIG: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
-      timing += TIME_SLICE_MS;
-      dihanje_state=MODE_STATE_EXP_START;
-      break;
-
-    case MODE_STATE_INSP_COMPLETE_MAX_VOL: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
-      timing += TIME_SLICE_MS;
-      dihanje_state=MODE_STATE_EXP_START;
-      break;
-
-		case MODE_STATE_INSP_COMPLETE_MAX_PRESSURE: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
-      timing += TIME_SLICE_MS;
-      dihanje_state=MODE_STATE_EXP_START;
-      break;
-
-		case MODE_STATE_INSP_COMPLETE_MAX_POS: //(Only in case of Error in previous state) motor je prisel do konca, pocakaj, da mine cas vdiha
-      timing += TIME_SLICE_MS;
-      dihanje_state=MODE_STATE_EXP_START;
       break;
 		
 		default:
-      ReportError(ModePS_UnknownState,FSH("Error: Unknown state in C_VCV state machine"));
+      ReportError(ModePS_UnknownState,FSH("Error: Unknown state in PS state machine"));
       Control->mode=CTRL_PAR_MODE_STOP;
       dihanje_state = 0;
       break;
