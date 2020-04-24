@@ -99,6 +99,9 @@ int main(void)
     uint32_t mark2=0;
 	  uint8_t newSettingsReceived;
 	  ErrCodes_t err;
+    ProcMsgState_t PMSuart0 = {0};
+    ProcMsgState_t PMSuart1 = {0};
+
 	  /*
 	  RespSettings_t	Settings;
 	  MeasuredParams_t Measured;
@@ -126,8 +129,8 @@ int main(void)
 	  Settings.PEEP = SETTINGS_DEFAULT_PEEP;
 	  Settings.limit_PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
     Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
-    Settings.limit_tidal_volume_min = SETTINGS_DEFAULT_MINUTE_VOLUME_MIN;
-    Settings.limit_tidal_volume_max = SETTINGS_DEFAULT_MINUTE_VOLUME_MAX;
+    Settings.limit_tidal_volume_min = SETTINGS_DEFAULT_LIMIT_TIDAL_VOLUME_MIN;
+    Settings.limit_tidal_volume_max = SETTINGS_DEFAULT_LIMIT_TIDAL_VOLUME_MAX;
     Settings.limit_minute_volume_min = SETTINGS_DEFAULT_MINUTE_VOLUME_MIN;
     Settings.limit_minute_volume_max = SETTINGS_DEFAULT_MINUTE_VOLUME_MAX;
     Settings.limit_breath_rate_min = SETTINGS_DEFAULT_BREATH_RATE_MIN;
@@ -193,8 +196,13 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
-  Ringbuf_Init();
+#ifdef PROTOTYPE_V2
+  HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
+  HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
+  HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
+#endif
+  Ringbuf0_Init();
+  Ringbuf1_Init();
   HAL_TIM_Base_Start(&htim1);
   HAL_ADC_Start_IT(&hadc1);
   HAL_ADC_Start_IT(&hadc2);
@@ -209,7 +217,6 @@ int main(void)
 
   while(1)
   {
-    // na 2 ms
     if (ADC_scan_complete())
     {
       //LED1_On();
@@ -249,6 +256,7 @@ int main(void)
       //ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
       //LED1_Off();
       //koda traja xy us (140 us before hardware abstraction was implemented)
+      ErrorBuzzer();
     }
 
     // na 2 ms
@@ -262,24 +270,44 @@ int main(void)
 
     //Report Status to the GUI
 //    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
+    if (Control.ReportReady & (1<<CTR_REPRDY_INSP))
+    {
+      Control.ReportReady &= ~(1<<CTR_REPRDY_INSP);
+      length=PrepareMetricsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Metrics);
+      UART0_SendBytes(msg,length);
+      UART1_SendBytes(msg,length);
+    }
+    if (Control.ReportReady & (1<<CTR_REPRDY_EXP))
+    {
+      Control.ReportReady &= ~(1<<CTR_REPRDY_EXP);
+      length=PrepareMetricsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Metrics);
+      UART0_SendBytes(msg,length);
+      UART1_SendBytes(msg,length);
+     /* length=PrepareStatisticsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Statistics);
+      UART0_SendBytes(msg,length);
+      UART1_SendBytes(msg,length);*/
+    }
+
     if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
       //LED6_Tgl();
       ErrQueue_GetErr(&err,&DefaultErrorQueue);
       mark2+=STATUS_REPORTING_PERIOD;
+      motorPosition = motor_GetPosition();
       length=PrepareStatusMessage(HAL_GetTick(),
            (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0),
-           (int16_t)(Measured.volume_t*10.0), (int16_t)(motor_GetPosition()),
+           (int16_t)(Measured.volume_t*10.0), (int16_t)motorPosition,
            (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter,
-           Control.status, err, Control.target_pressure, msg);
+           Control.status, err, Control.target_volume, msg);
       UART0_SendBytes(msg,length);
+      UART1_SendBytes(msg,length);
     }
 
     //Listen for commands
     if(UART0_DataReady())	//process received data 1 byte per loop
     {
 	    UART0_GetByte(&com_data);
-	    ProcessMessages(com_data, &Settings, &newSettingsReceived);
+	    ProcessMessages(com_data, &Settings, &PMSuart0, &newSettingsReceived);
     }
     if (newSettingsReceived)
     {
@@ -287,8 +315,26 @@ int main(void)
 	    length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
 	    if (length > 0)
 	    {
-		    UART0_SendBytes(msg,length);
+        UART0_SendBytes(msg,length);
+        UART1_SendBytes(msg,length);
 	    }
+    }
+
+    //Listen for commands
+    if(UART1_DataReady()) //process received data 1 byte per loop
+    {
+      UART1_GetByte(&com_data);
+      ProcessMessages(com_data, &Settings, &PMSuart1, &newSettingsReceived);
+    }
+    if (newSettingsReceived)
+    {
+      newSettingsReceived = 0;
+      length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
+      if (length > 0)
+      {
+        UART0_SendBytes(msg,length);
+        UART1_SendBytes(msg,length);
+      }
     }
 
     /* USER CODE END WHILE */
