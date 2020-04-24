@@ -14,6 +14,9 @@
 #define PID_SAMPLING_TIME   TIME_SLICE_MS   //only applies to the INT version of PID.
 #include "PID.h"  //PID_SAMPLING_TIME must be defined before including "PID.h"
 
+#define PROTOTYPE_V2
+//#define PROTOTYPE_V1
+
 //app defines
 #define MSG_CORE_LENGTH	25
 #ifdef AVR
@@ -73,8 +76,8 @@
 #define SETTINGS_DEFAULT_FLOW_PID_MINOUT      -100
 
 #define SETTINGS_DEFAULT_VOLUME_PID_P           0.2 //64  // = P/SCALING_FACTOR = 0.5
-#define SETTINGS_DEFAULT_VOLUME_PID_I           0.5 //1  // = I/SCALING_FACTOR
-#define SETTINGS_DEFAULT_VOLUME_PID_D           0.0 // = D/SCALING_FACTOR
+#define SETTINGS_DEFAULT_VOLUME_PID_I           5.0 //1  // = I/SCALING_FACTOR
+#define SETTINGS_DEFAULT_VOLUME_PID_D           0.001 // = D/SCALING_FACTOR
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXERR      500
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXSUMERR   20000
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXOUT      100
@@ -123,6 +126,9 @@
 #define SETTINGS_MIN_BREATH_RATE_LIMIT_MAX   30
 #define SETTINGS_MAX_BREATH_RATE_LIMIT_MIN   1
 #define SETTINGS_MAX_BREATH_RATE_LIMIT_MAX   30
+
+#define SETTINGS_MUTE_TIME_MIN   1000
+#define SETTINGS_MUTE_TIME_MAX   300000
 
 #define MAX_PS_INSP_TIME  5000
 
@@ -177,8 +183,8 @@ typedef struct RESPIRATOR_SETTINGS{
   uint16_t limit_breath_rate_min;
   uint16_t limit_breath_rate_max;
 	uint16_t PEEP;
-  uint16_t limit_PeakInspPressure;
   uint16_t limit_InspPressure_min;
+  uint16_t limit_PeakInspPressure;
 	uint16_t target_pressure;
   uint16_t trigger_pressure; // PCAP-PS inhale trigger
   uint16_t ETS;              // Expiria Stop trigger
@@ -226,6 +232,9 @@ typedef struct MEASURED_PARAMS{
 #define CTRL_PAR_MAX_POSITION	100
 #define CTRL_PAR_MIN_POSITION	0
 
+#define CTR_REPRDY_INSP   0
+#define CTR_REPRDY_EXP   1
+
 typedef struct CONTROL_PARAMS{
 	uint8_t mode;		//regulate speed/position
 	float target_speed;	// max: +-100%
@@ -239,7 +248,8 @@ typedef struct CONTROL_PARAMS{
 	float target_flow;	// l/min
 	int16_t BreathCounter;	//steje vdihe
 	uint8_t status;	//stanje state machina za dihanje
-	uint8_t Error;	//napake (bitwise)
+  uint8_t Error;  //napake (bitwise)
+  uint8_t ReportReady;  //bit0 - insp done, bit1 exp done
 } CtrlParams_t;
 
 typedef enum
