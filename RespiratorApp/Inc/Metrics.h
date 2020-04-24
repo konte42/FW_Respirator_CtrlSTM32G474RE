@@ -31,34 +31,65 @@ typedef enum BREATH_TRIGGER_TYPE_T{
   TRIG_TYPE_PRESSURE_TRIGGER
 } BreathTrigType_t;
 
+typedef struct BREATH_CYCLE_METRICS_T{
+  float ExpiriaTimes;
+  float InspiriaTimes;
+  float TidalVolumes;
+  float MeanAirwayPressure;
+  float PeakExpiratoryFlow;
+  float RCexp;
+  float BreathTriggerTimestamp;
+  BreathTrigType_t BreathTriggerType;
+} BreathCycleMetrics_t;
+
 typedef struct BREATH_CYCLE_HIST_T{
-  uint32_t cycleTimes[METRICS_MAX_HIST_LENGTH];
-  float TidalVolumes[METRICS_MAX_HIST_LENGTH];
-  float MeanAirwayPressure[METRICS_MAX_HIST_LENGTH];
-  float PeakExpiratoryFlow[METRICS_MAX_HIST_LENGTH];
-  float RCexp[METRICS_MAX_HIST_LENGTH];
-  BreathTrigType_t BreathTriggerType[METRICS_MAX_HIST_LENGTH];
-  uint32_t BreathTriggerTimestamp[METRICS_MAX_HIST_LENGTH];
+  BreathCycleMetrics_t mtr[METRICS_MAX_HIST_LENGTH];
   int in;
   int out;
   int count;
 }BreathCycleHist_t;
 
-extern float AvgCycleTime, MinCycleTime, MaxCycleTime;
-extern float AvgBPM,      MinBPM,     MaxBPM;
-extern float AvgVt,       MinVt,      MaxVt;
-extern float AvgRCexp,    MinRCexp,   MaxRCexp;
-extern float AvgMAP,      MinMAP,     MaxMAP;
-extern float AvgPEF,      MinPEF,     MaxPEF;
+typedef union METRICS_UNION_T{
+  struct {
+    float AvgInspTime, MinInspTime, MaxInspTime;
+    float AvgMAP,      MinMAP,     MaxMAP;
+    float AvgVt,       MinVt,      MaxVt;
+
+    float AvgExpTime,  MinExpTime, MaxExpTime;
+    float AvgCycleTime, MinCycleTime, MaxCycleTime;
+    float AvgBPM,      MinBPM,     MaxBPM;
+    float AvgRCexp,    MinRCexp,   MaxRCexp;
+    float AvgPEF,      MinPEF,     MaxPEF;
+    float MinuteVolume;
+  } cyc;
+  struct  {
+    struct {
+      float AvgInspTime, MinInspTime, MaxInspTime;
+      float AvgMAP,      MinMAP,     MaxMAP;
+      float AvgVt,       MinVt,      MaxVt;
+    } insp;
+    struct  {
+      float AvgExpTime,  MinExpTime, MaxExpTime;
+      float AvgCycleTime, MinCycleTime, MaxCycleTime;
+      float AvgBPM,      MinBPM,     MaxBPM;
+      float AvgRCexp,    MinRCexp,   MaxRCexp;
+      float AvgPEF,      MinPEF,     MaxPEF;
+      float MinuteVolume;
+    } exp;
+  };
+} MetricsStatistics_t;
+
+extern BreathCycleMetrics_t Metrics;
+extern MetricsStatistics_t Statistics;
 
 void MetricsNextCycle(void);
 void MetricsInit(void);
-void MetricsStoreCycTime(uint32_t time);
+void MetricsStoreInspTime(uint32_t time);
+void MetricsStoreExpTime(uint32_t time);
 void MetricsStoreVt(float value);
 void MetricsStoreMAP(float value);
 void MetricsStorePEF(float value);
 void MetricsStoreRCexp(float value);
 void MetricsStoreBreathTrigger(uint32_t timestamp, BreathTrigType_t type);
-
 
 #endif /* INC_METRICS_H_ */
