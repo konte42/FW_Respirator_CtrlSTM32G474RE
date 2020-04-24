@@ -214,17 +214,17 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 				===================>>> extern void Uart_ISR(UART_HandleTypeDef *huart); <<<===================
 */
 
-ring_buffer rx_buffer = { { 0 }, 0, 0, 0};
-ring_buffer tx_buffer = { { 0 }, 0, 0, 0};
+ring_buffer rx_buffer0 = { { 0 }, 0, 0, 0};
+ring_buffer tx_buffer0 = { { 0 }, 0, 0, 0};
 
 
-ring_buffer *_rx_buffer;
-ring_buffer *_tx_buffer;
+ring_buffer *_rx_buffer0;
+ring_buffer *_tx_buffer0;
 
-void Ringbuf_Init(void)
+void Ringbuf0_Init(void)
 {
-  _rx_buffer = &rx_buffer;
-  _tx_buffer = &tx_buffer;
+  _rx_buffer0 = &rx_buffer0;
+  _tx_buffer0 = &tx_buffer0;
 
 //TODO: Enabling this interrupt disables TIMER3 CH2 PWM. Figure out why!
   /* Incilizacija "UART Error" prekinitve: (Frame error, noise error, overrun error) */
@@ -234,9 +234,9 @@ void Ringbuf_Init(void)
   __HAL_UART_ENABLE_IT(&UART0, UART_IT_RXNE);
 }
 
-void UART_Init()
+void UART0_Init()
 {
-	  UART0.Instance = USART2;						//Izberemo UART kanal
+	  UART0.Instance = USART1;						//Izberemo UART kanal
 	  UART0.Init.BaudRate = 115200;				//Izberemo BAUD rate
 	  UART0.Init.WordLength = UART_WORDLENGTH_8B;	//Nastavimo Data bite
 	  UART0.Init.StopBits = UART_STOPBITS_1;		//Nastavimo Stop bite
@@ -260,7 +260,7 @@ void store_char(unsigned char c, ring_buffer *buffer)
 
 int UART0_DataReady(void)
 {
-	return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer->head - _rx_buffer->tail) % UART_BUFFER_SIZE;
+	return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer0->head - _rx_buffer0->tail) % UART_BUFFER_SIZE;
 }
 
 int UART0_SendStr(const char *s)
@@ -287,15 +287,14 @@ UART_Status_t UART0_put(const char c)
 {
 	if (c>=0)
 		{
-			int i = (_tx_buffer->head + 1) % UART_BUFFER_SIZE;
+			int i = (_tx_buffer0->head + 1) % UART_BUFFER_SIZE;
 
 			//Če je output buffer poln javimo napako
-			if(i == _tx_buffer->tail) return UART_EOF;
+			if(i == _tx_buffer0->tail) return UART_EOF;
 
-			_tx_buffer->buffer[_tx_buffer->head] = (uint8_t)c;
-			_tx_buffer->head = i;
-			_tx_buffer->count++;
-			LED7_On();
+			_tx_buffer0->buffer[_tx_buffer0->head] = (uint8_t)c;
+			_tx_buffer0->head = i;
+			_tx_buffer0->count++;
 			__HAL_UART_ENABLE_IT(&UART0, UART_IT_TXE); // Omogočimo UART transmission interrupt
 		}
 		return UART_OK;
@@ -305,30 +304,30 @@ UART_Status_t UART0_GetByte(char *data)
 {
 
   //Če head ni pread tail, ni novih znakov
-  if(_rx_buffer->head == _rx_buffer->tail)
+  if(_rx_buffer0->head == _rx_buffer0->tail)
   {
     return UART_EOF;
   }
   else
   {
-    *data = _rx_buffer->buffer[_rx_buffer->tail];
-    _rx_buffer->tail = (unsigned int)(_rx_buffer->tail + 1) % UART_BUFFER_SIZE;
-    _rx_buffer->count--;
+    *data = _rx_buffer0->buffer[_rx_buffer0->tail];
+    _rx_buffer0->tail = (unsigned int)(_rx_buffer0->tail + 1) % UART_BUFFER_SIZE;
+    _rx_buffer0->count--;
     return UART_OK;
   }
 }
 
 int UART0_numTxBytes()
 {
-	return _tx_buffer->count;
+	return _tx_buffer0->count;
 }
 
 int UART0_numRxBytes()
 {
-	return _rx_buffer->count;
+	return _rx_buffer0->count;
 }
 
-void UART_ISR(UART_HandleTypeDef *huart)
+void UART_ISR(UART_HandleTypeDef *huart, ring_buffer* rxBuf, ring_buffer* txBuf)
 {
 	  uint32_t isrflags   = READ_REG(huart->Instance->ISR);
 	  uint32_t cr1its     = READ_REG(huart->Instance->CR1);
@@ -349,14 +348,14 @@ void UART_ISR(UART_HandleTypeDef *huart)
     	 *********************/
 		huart->Instance->ISR;                       /* Read status register */
         unsigned char c = huart->Instance->RDR;     /* Read data register */
-        store_char (c, _rx_buffer);  // store data in buffer
+        store_char (c, rxBuf);  // store data in buffer
     }
 
     /*If interrupt is caused due to Transmit Data Register Empty */
     else if (((isrflags & USART_ISR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
     {
 
-    	if(tx_buffer.head == tx_buffer.tail)
+    	if(txBuf->head == txBuf->tail)
     	    {
     	      // Buffer empty, so disable interrupts
     	      __HAL_UART_DISABLE_IT(huart, UART_IT_TXE);
@@ -367,9 +366,9 @@ void UART_ISR(UART_HandleTypeDef *huart)
     	 else
     	    {
     	      // There is more data in the output buffer. Send the next byte
-    	      unsigned char c = tx_buffer.buffer[tx_buffer.tail];
-    	      tx_buffer.tail = (tx_buffer.tail + 1) % UART_BUFFER_SIZE;
-    	      tx_buffer.count--;
+    	      unsigned char c = txBuf->buffer[txBuf->tail];
+    	      txBuf->tail = (txBuf->tail + 1) % UART_BUFFER_SIZE;
+    	      txBuf->count--;
     	      /******************
     	      *  @note   PE (Parity error), FE (Framing error), NE (Noise error), ORE (Overrun
     	      *          error) and IDLE (Idle line detected) flags are cleared by software
@@ -388,6 +387,118 @@ void UART_ISR(UART_HandleTypeDef *huart)
     	    }
     }
 }
+
+
+
+
+
+#define UART1 hlpuart1
+
+/* !!! NASLEDNJO VRSTICO MORAMO VSTAVITI v funkcijo "void USARTx_IRQHandler(void)" ki se nahaja v filu "stm32xxxx_it.c", vse ostalo pa je potrebno zakomentirati.
+        ===================>>> extern void Uart_ISR(UART_HandleTypeDef *huart); <<<===================
+*/
+
+ring_buffer rx_buffer1 = { { 0 }, 0, 0, 0};
+ring_buffer tx_buffer1 = { { 0 }, 0, 0, 0};
+
+
+ring_buffer *_rx_buffer1;
+ring_buffer *_tx_buffer1;
+
+void Ringbuf1_Init(void)
+{
+  _rx_buffer1 = &rx_buffer1;
+  _tx_buffer1 = &tx_buffer1;
+
+//TODO: Enabling this interrupt disables TIMER3 CH2 PWM. Figure out why!
+  /* Incilizacija "UART Error" prekinitve: (Frame error, noise error, overrun error) */
+//  __HAL_UART_ENABLE_IT(&UART1, UART_IT_ERR);
+
+  /* Incilizacija "UART Data Register not empty" prekinitve */
+  __HAL_UART_ENABLE_IT(&UART1, UART_IT_RXNE);
+}
+
+void UART1_Init()
+{
+    UART1.Instance = LPUART1;            //Izberemo UART kanal
+    UART1.Init.BaudRate = 115200;       //Izberemo BAUD rate
+    UART1.Init.WordLength = UART_WORDLENGTH_8B; //Nastavimo Data bite
+    UART1.Init.StopBits = UART_STOPBITS_1;    //Nastavimo Stop bite
+    UART1.Init.Parity = UART_PARITY_NONE;   //nastavimo pariteto
+    UART1.Init.Mode = UART_MODE_TX_RX;
+    UART1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+    UART1.Init.OverSampling = UART_OVERSAMPLING_16;
+}
+
+int UART1_DataReady(void)
+{
+  return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer1->head - _rx_buffer1->tail) % UART_BUFFER_SIZE;
+}
+
+int UART1_SendStr(const char *s)
+{
+  int i;
+  for (i=0; *s; i++)
+  {
+    if (UART1_put(*s++) != UART_OK) return i;
+  }
+  return i;
+}
+
+int UART1_SendBytes(const char *s, int num)
+{
+  int i;
+  for (i=0; i<num; i++)
+  {
+    if (UART1_put(*s++) != UART_OK) return i;
+  }
+  return i;
+}
+
+UART_Status_t UART1_put(const char c)
+{
+  if (c>=0)
+    {
+      int i = (_tx_buffer1->head + 1) % UART_BUFFER_SIZE;
+
+      //Če je output buffer poln javimo napako
+      if(i == _tx_buffer1->tail) return UART_EOF;
+
+      _tx_buffer1->buffer[_tx_buffer1->head] = (uint8_t)c;
+      _tx_buffer1->head = i;
+      _tx_buffer1->count++;
+      __HAL_UART_ENABLE_IT(&UART1, UART_IT_TXE); // Omogočimo UART transmission interrupt
+    }
+    return UART_OK;
+}
+
+UART_Status_t UART1_GetByte(char *data)
+{
+
+  //Če head ni pread tail, ni novih znakov
+  if(_rx_buffer1->head == _rx_buffer1->tail)
+  {
+    return UART_EOF;
+  }
+  else
+  {
+    *data = _rx_buffer1->buffer[_rx_buffer1->tail];
+    _rx_buffer1->tail = (unsigned int)(_rx_buffer1->tail + 1) % UART_BUFFER_SIZE;
+    _rx_buffer1->count--;
+    return UART_OK;
+  }
+}
+
+int UART1_numTxBytes()
+{
+  return _tx_buffer1->count;
+}
+
+int UART1_numRxBytes()
+{
+  return _rx_buffer1->count;
+}
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
