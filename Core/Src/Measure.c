@@ -5,6 +5,8 @@
  *  Author: maticpi
  */ 
 #include "Measure.h"
+#include <math.h>
+#define FLOW_ZERO   32410
 
 void MeasureInit()
 {
@@ -13,12 +15,16 @@ void MeasureInit()
 void MeasureFlow(MeasuredParams_t* Measured)
 {
 	uint16_t *ADC_Results;
-	float flow_positive, flow_negative;
+	float flow_positive;
+#ifdef PROTOTYPE_V1
+	float flow_negative;
+#endif
 	float flow; // l/min
 	float x;
 	
 	ADC_Results=ADC_results_p();
 	flow_positive = *(ADC_Results+ADC_CH_FLOW  );
+#ifdef PROTOTYPE_V1
 	flow_negative = *(ADC_Results+ADC_CH_FLOW_N);
 
 	if (flow_positive > flow_negative)
@@ -31,7 +37,22 @@ void MeasureFlow(MeasuredParams_t* Measured)
 		x=flow_negative;
 		flow = -(-3.56553E-08*x*x + 5.68075E-03*x - 4.1E+01);
 	}
-
+#elif defined(PROTOTYPE_V2)
+  x=flow_positive - FLOW_ZERO;
+	if (x > 0)  //inspiria
+  {
+	  x=flow_positive - FLOW_ZERO;
+    flow = -2.7090229E-07*x*x + 1.7542158E-02*x;
+  }
+  else  //expiria
+  {
+    x=FLOW_ZERO - flow_positive;
+    flow = -(-4.23993E-07*x*x + 1.86869E-02*x);
+  }
+	if (fabs(flow) < 0.2) flow = 0;
+#else
+#error Prototype version not defined.
+#endif
 	Measured->flow=flow;
 }
 
