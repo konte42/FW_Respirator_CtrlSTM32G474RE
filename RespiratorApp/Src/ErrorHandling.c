@@ -6,10 +6,40 @@
  */ 
 #include <string.h>
 #include "ErrorHandling.h"
+#include "gpio.h"
 
 //Figure out where it would make sense to put ErrorReporter and put one there
 #include "main.h"
 extern UART_HandleTypeDef hlpuart1;
+
+int buzzerState=0;
+int buzzerMute=0; //
+
+void ErrorBuzzer()
+{
+  if (buzzerMute > 0)
+  {
+    BUZZ_Off();
+    buzzerMute--;
+    buzzerState=0;
+  }
+  else
+  {
+    if (buzzerState == 1) //Warning beep once a second
+    {
+      if ((HAL_GetTick() % 1000) < 200) BUZZ_On();
+      else BUZZ_Off();
+    }
+    else if (buzzerState > 1)
+    {
+      BUZZ_On();
+    }
+    else
+    {
+      BUZZ_Off();
+    }
+  }
+}
 
 void IncError(ErrStatistics_t *err)
 {
@@ -21,6 +51,7 @@ void IncError(ErrStatistics_t *err)
       if (err->cnt > err->WarningHighThreshold)
       {
         err->status = ERR_STATUS_WARNING;
+        if (buzzerState < 2) buzzerState = 1;
       }
   }
   else if (err->status == ERR_STATUS_WARNING)
@@ -28,8 +59,11 @@ void IncError(ErrStatistics_t *err)
     if (err->cnt > err->ErrorHighThreshold)
     {
       err->status = ERR_STATUS_ERROR;
+      buzzerState = 2;
     }
+    else buzzerState = 1;
   }
+  else buzzerState = 2;
 
   if (err->status == ERR_STATUS_WARNING)
   {
@@ -135,6 +169,6 @@ void ReportError(ErrCodes_t ErrCode, char ErrMsg[])
 {
 	ErrQueue_StoreErr(ErrCode,&DefaultErrorQueue);
 	//printf("Error %d: %s,ErrCode,ErrMsg);
-	HAL_UART_Transmit_IT(&hlpuart1, (uint8_t*)ErrMsg, strlen(ErrMsg));
+	//HAL_UART_Transmit_IT(&hlpuart1, (uint8_t*)ErrMsg, strlen(ErrMsg));
 }
 #endif

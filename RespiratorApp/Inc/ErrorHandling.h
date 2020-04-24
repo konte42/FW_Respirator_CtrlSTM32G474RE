@@ -12,11 +12,11 @@
 #include <inttypes.h>
 #include <stddef.h>
 
-#define DEFAULT_WARNING_THERSHOLD_LOW   2
-#define DEFAULT_WARNING_THERSHOLD_HIGH  4
-#define DEFAULT_ERROR_THERSHOLD_LOW     5
-#define DEFAULT_ERROR_THERSHOLD_HIGH    7
-#define DEFAULT_ERR_MAX_COUNT 10
+#define DEFAULT_WARNING_THERSHOLD_LOW   1
+#define DEFAULT_WARNING_THERSHOLD_HIGH  2
+#define DEFAULT_ERROR_THERSHOLD_LOW     4
+#define DEFAULT_ERROR_THERSHOLD_HIGH    5
+#define DEFAULT_ERR_MAX_COUNT 6
 
 #define USE_DEFAULT_ERROR_REPORTER	1
 //Default Error reporter just stores errors in an Error Queue
@@ -36,6 +36,8 @@ typedef enum ErrCodes
   ErrQueueEmpty = 0x01,    //This is ok - no errors
   DbgMsg = 0x02,
 
+  Info_Limits_MaxPosition = 0x10,
+
   //0xA0 - 0xBF: Communication errors
   ComRxUnknownParameter = 0xA0,
   ComRxNoSpaceAfterParam,
@@ -45,22 +47,19 @@ typedef enum ErrCodes
   //Parameter limits
   ComRxUnknownMode,
 
+  ComRxMuteTimeOutsideLimits,
   ComRxRampOutsideLimits,
   ComRxInspTmOutsideLimits,
   ComRxExpTmOutsideLimits,
   ComRxPEEPOutsideLimits,
-  
   ComRxPeakInspPressureOutsideLimits,
   ComRxMinInspPressureOutsideLimits,
   ComRxTargetPressureOutsideLimits,
   ComRxVolumeOutsideLimits,
-
   ComRxInspiriaTriggerPressureOutsideLimits,
   ComRxETS_OutsideLimits,
-
   ComRxBreathRateLimitMinOtsideLimits,
   ComRxBreathRateLimitMaxOtsideLimits,
-
   ComRxPIDPOutsideLimits,
   ComRxPIDIOutsideLimits,
   ComRxPIDDOutsideLimits,
@@ -85,20 +84,17 @@ typedef enum ErrCodes
   Info_Limits_MinTidalVolume,
   Info_Limits_MaxTidalVolume,
   Info_Limits_PeakPressure,
-  Info_Limits_MaxPosition,
   Info_Limits_MinPressure,
 	//0x2000 - 0x1FFF: Warnings (Medical)
   Warning_Limits_PeakPreassure      = 0x2000,
   Warning_Limits_MinPressure,
   Warning_Limits_MinTidalVolume,
   Warning_Limits_MaxTidalVolume,
-  WarningCycleEND_MaxMotorPosition,
 	//0x3000 - ...: Errors (Medical)
   Error_Limits_PeakPreassure        = 0x3000,
   Error_Limits_MinPressure,
   Error_Limits_MinTidalVolume,
   Error_Limits_MaxTidalVolume,
-  ErrorCycleEND_MaxMotorPosition
 
 } ErrCodes_t;
 
@@ -137,11 +133,13 @@ void DecError(ErrStatistics_t *err);
 char* GetErrorString(ErrCodes_t errorCode);
 
 extern ErrQueue_t DefaultErrorQueue;
+extern int buzzerMute;
 
 void ErrQueue_Init(struct ERR_QUEUE *ErrQueue);
 void ErrQueue_StoreErr (ErrCodes_t ErrCode, struct ERR_QUEUE *ErrQueue);	//No point in returning error - who to? This is the error handling code.
 ErrCodes_t ErrQueue_GetErr (ErrCodes_t* ErrCode, struct ERR_QUEUE *ErrQueue);
 uint8_t ErrQueue_NumberOfErrors();
+void ErrorBuzzer();
 
 #if USE_DEFAULT_ERROR_REPORTER
 void ReportError(ErrCodes_t ErrCode, char ErrMsg[]);
