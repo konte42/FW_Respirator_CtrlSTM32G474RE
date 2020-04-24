@@ -10,6 +10,7 @@
 #define MOTOR_H_
 
 #include "main.h"
+#include "CommonDefinitions.h"
 // ******************************
 // Uporabniske nastavitve
 // ******************************
@@ -21,12 +22,22 @@
 //#define MOTOR_POS_BREAKINGPOINT_OPEN 885
 //#define MOTOR_POS_BREAKINGPOINT_CLOSED 726
 
+#ifdef PROTOTYPE_V1
 //#define MOTOR_POS_RAW_OPEN  50500 // --> 0
-#define MOTOR_POS_RAW_OPEN  52240 // --> 0
+#define MOTOR_POS_RAW_OPEN  53450 // --> 0
 //#define MOTOR_POS_RAW_CLOSED  44700// -->?
-#define MOTOR_POS_RAW_CLOSED  45860// -->?
+#define MOTOR_POS_RAW_CLOSED  47860// -->?
 #define MOTOR_POS_BREAKINGPOINT_OPEN  54200
 #define MOTOR_POS_BREAKINGPOINT_CLOSED 44600
+#elif defined(PROTOTYPE_V2)
+#define MOTOR_POS_RAW_OPEN  15900 // --> 0
+#define MOTOR_POS_RAW_CLOSED  62000// -->?
+#define MOTOR_POS_BREAKINGPOINT_OPEN  0
+#define MOTOR_POS_BREAKINGPOINT_CLOSED 65520
+#else
+#error Prototype version not defined.
+#endif
+
 
 #define MOTOR_POS_OPEN	0		// pos: \ /
 #define MOTOR_POS_CLOSED	(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED) // pos: ||
@@ -40,6 +51,8 @@
 
 #define MOTOR_OK 1
 #define MOTOR_ERR 0
+
+extern float motorPosition;
 
 typedef enum
 {

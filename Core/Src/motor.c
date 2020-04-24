@@ -6,6 +6,7 @@
  */ 
 #include "motor.h"
 #include "adc.h"
+#include "gpio.h"
 
 extern TIM_HandleTypeDef htim3;
 MotorDir_t MotorDir;
@@ -21,10 +22,10 @@ void motor_Init()
   HAL_GPIO_WritePin(GPIOB, MOTOR_INA_Pin|MOTOR_INB_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SWB_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SWB_GPIO_Port, &GPIO_InitStruct);
+//  GPIO_InitStruct.Pin = SWB_Pin;
+//  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  HAL_GPIO_Init(SWB_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PAPin PAPin */
   GPIO_InitStruct.Pin = MOTOR_SEL0_Pin;
@@ -34,10 +35,10 @@ void motor_Init()
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SWA_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(SWA_GPIO_Port, &GPIO_InitStruct);
+//  GPIO_InitStruct.Pin = SWA_Pin;
+//  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+//  GPIO_InitStruct.Pull = GPIO_NOPULL;
+//  HAL_GPIO_Init(SWA_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin */
   GPIO_InitStruct.Pin = MOTOR_INA_Pin|MOTOR_INB_Pin;
@@ -47,11 +48,11 @@ void motor_Init()
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /* EXTI interrupt init*/
-  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
+//  HAL_NVIC_SetPriority(EXTI0_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(EXTI0_IRQn);
 
-  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+//  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 0, 0);
+//  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 
   MotorDir = MOTOR_DIR_UNDEFINED;
   HAL_TIM_Base_Start(&htim3);
@@ -104,12 +105,14 @@ void motor_SetRawDutyCycle(uint16_t dutyCycle)
 	if (dutyCycle>MOTOR_MAX_DC) dutyCycle = MOTOR_MAX_DC;
 	if ( MotorDir==MOTOR_DIR_VDIH) // ko stiskamo, ne sme DC nikoli pasti na nic, tudi ce pride do konca
 	{
-		if (!HAL_GPIO_ReadPin(SWA_GPIO_Port, SWA_Pin)) { TIM3->CCR2 = dutyCycle; }
-		else TIM3->CCR2 = MOTOR_MIN_DC;
+		//if (!HAL_GPIO_ReadPin(SWA_GPIO_Port, SWA_Pin)) { TIM3->CCR2 = dutyCycle; }
+	  if (motor_GetPosition() < 100) { TIM3->CCR2 = dutyCycle; }
+	  else TIM3->CCR2 = MOTOR_MIN_DC;
 	}
 	else	//izdih
 	{
-		if (!HAL_GPIO_ReadPin(SWB_GPIO_Port, SWB_Pin)) { TIM3->CCR2 = dutyCycle; }
+		//if (!HAL_GPIO_ReadPin(SWB_GPIO_Port, SWB_Pin)) { TIM3->CCR2 = dutyCycle; }
+		if (motor_GetPosition() > 0) { TIM3->CCR2 = dutyCycle; }
 		else TIM3->CCR2=0;
 	}
 }
@@ -133,10 +136,16 @@ void motor_SetDutyCycle(uint16_t dutyCycle)
 	}
 }
 
-
+float motorPosition;
 
 float motor_GetPosition()	//0 - 100 = normal open - normal closed
 {
+#ifdef PROTOTYPE_V1
+#elif defined(PROTOTYPE_V2)
+  if (is_SWA()) return -50;
+#else
+#error Prototype version not defined.
+#endif
 	int32_t raw=*(ADC_results_p()+ADC_CH_POSITION);
 	return (float)(MOTOR_POS_RAW_OPEN-raw)/(float)(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED)*100.0 ;
 }
