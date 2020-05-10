@@ -6,6 +6,7 @@
  */ 
 #include "CommProtocol.h"
 #include <stdio.h>
+#include "Measure.h"
 
 #define ValidateAndApplyReceivedValue(typ, value, setting, min, max, err) \
 case typ: if ((value >= min ) && (value <= max ) ) {setting = value;} else {ReportError(err, FSH(""));} break
@@ -43,6 +44,9 @@ void ValidateAndApplyReceivedValue(int32_t value, void* setting, eParamType_t ty
 int PrepareStatusMessage(uint32_t timestamp, int16_t Flow, int16_t Pressure, int16_t Volume, int16_t MotorPosition, \
 int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t Status, ErrCodes_t Error, float target_value, char *p_msg)
 {
+  uint16_t *ptr_ADCresults;
+  ptr_ADCresults=ADC_results_p();
+
 	//STX+N+TIMESTAMP+4xADC+ETX
 	*p_msg = 0x55;
 	p_msg++;
@@ -79,11 +83,26 @@ int16_t MotorCurrent, int16_t MotorDutyCycle, uint16_t BreathCounter, uint8_t St
 
 	*(uint16_t *)p_msg = Error;
 	p_msg +=2;
-	
+
+  *(uint32_t *)p_msg = GlobalErrorStatus.errors1;
+  p_msg +=4;
+
 	*(float *)p_msg = target_value;
   p_msg +=4;
 
-	*(p_msg) = 0xAA;
+  *(uint16_t *)p_msg = *(ptr_ADCresults + ADC_CH_FLOW);
+  p_msg +=2;
+
+  *(uint16_t *)p_msg = *(ptr_ADCresults + ADC_CH_PRESSURE);
+  p_msg +=2;
+
+  *(uint16_t *)p_msg = *(ptr_ADCresults + ADC_CH_MOTOR_CURRENT);
+  p_msg +=2;
+
+  *(uint16_t *)p_msg = *(ptr_ADCresults + ADC_CH_POSITION);
+  p_msg +=2;
+
+  *(p_msg) = 0xAA;
 
 	return (1+1+MSG_CORE_LENGTH+1);
 }

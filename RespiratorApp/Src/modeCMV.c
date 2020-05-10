@@ -50,20 +50,6 @@ float peakExpFlow;
 
 void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-  static ErrStatistics_t  Err_Limit_PeakPreasure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_PeakPressure,Warning_Limits_PeakPreassure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MinPressure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinPressure,Warning_Limits_MinPressure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MinTidalVolume={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinTidalVolume,Warning_Limits_MinTidalVolume,Error_Limits_MinTidalVolume};
 
   Control->status = dihanje_state;  // shrani stanje dihanja
 
@@ -75,11 +61,15 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
   switch (dihanje_state)
   {
     case MODE_STATE_FIRST_RUN:  //First time: init local settings, etc
+      ClrError(&Err_Limit_PeakPreasure);
+      ClrError(&Err_Limit_MaxTidalVolume);
+      ClrError(&Err_Limit_MinPressure);
+      ClrError(&Err_Limit_MinTidalVolume);
       SETexp_time = 0;
       SET_PEEP = Settings->PEEP/10.0;
       timing=0;
       dihanje_state=MODE_STATE_EXP_START;
-    break;
+    //break;  //BRAKE is not needed here.
 
     case MODE_STATE_EXP_START: // zacetek vdiha, preveri, ce so klesce narazen, sicer jih daj narazen
       Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
@@ -234,37 +224,38 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       // ce je prisel do konca, zakljuci cikel vdiha
       if (Measured->volume_t > TargetVolume)
       {
-        DecError(&Err_Limit_PeakPreasure);
         DecError(&Err_Limit_MinTidalVolume);
         if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
         else DecError(&Err_Limit_MinPressure);
+        DecError(&Err_Limit_PeakPreasure);
         dihanje_state = MODE_STATE_EXP_START;
       }
       //Alternate condition - max volume reached. Should probably issue a warning
       if (timing > SETinsp_time)
       {
-        DecError(&Err_Limit_PeakPreasure);
-        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
-        else DecError(&Err_Limit_MinPressure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
+        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+        else DecError(&Err_Limit_MinPressure);
+        DecError(&Err_Limit_PeakPreasure);
         dihanje_state=MODE_STATE_EXP_START;
       }
       if (Measured->pressure > MAXpressure)
       {
-        IncError(&Err_Limit_PeakPreasure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
+        DecError(&Err_Limit_MinPressure);
+        IncError(&Err_Limit_PeakPreasure);
         dihanje_state = MODE_STATE_EXP_START;
       }
       //Errors:
       if (Control->cur_position >= CTRL_PAR_MAX_POSITION) //Came too far - wait in this position until insp
       {
-        DecError(&Err_Limit_PeakPreasure);
-        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
-        else DecError(&Err_Limit_MinPressure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
+        if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
+        else DecError(&Err_Limit_MinPressure);
+        DecError(&Err_Limit_PeakPreasure);
         dihanje_state = MODE_STATE_EXP_START;
       }
       break;

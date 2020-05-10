@@ -29,6 +29,7 @@
 /* USER CODE BEGIN Includes */
 #include "PID.h"
 #include "CommonDefinitions.h"
+#include "PowerStatus.h"
 #include "motor.h"
 #include "Measure.h"
 #include "ActuatorControl.h"
@@ -97,6 +98,7 @@ int main(void)
 	  uint32_t mark1=0;
 	#endif
     uint32_t mark2=0;
+    uint32_t mark1ms=0;
 	  uint8_t newSettingsReceived;
 	  ErrCodes_t err;
     ProcMsgState_t PMSuart0 = {0};
@@ -217,6 +219,14 @@ int main(void)
 
   while(1)
   {
+    //Check power status every ms, regardless of everything else
+    //At least some error checking should also be done here
+    if (HAL_GetTick() != mark1ms)
+    {
+      mark1ms=HAL_GetTick();
+      DetectPowerStatus();
+    }
+
     if (ADC_scan_complete())
     {
       //LED1_On();

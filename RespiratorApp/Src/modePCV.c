@@ -16,25 +16,6 @@ float fFIR50(float new_x, int reset, float reset_val);
 
 void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-  static ErrStatistics_t  Err_Limit_PeakPreasure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_PeakPressure,Warning_Limits_PeakPreassure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MaxTidalVolume={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MaxTidalVolume,Warning_Limits_MaxTidalVolume,Error_Limits_MaxTidalVolume};
-
-  static ErrStatistics_t  Err_Limit_MinPressure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinPressure,Warning_Limits_MinPressure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MinTidalVolume={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinTidalVolume,Warning_Limits_MinTidalVolume,Error_Limits_MinTidalVolume};
 
   static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
   static  int16_t timing;
@@ -76,6 +57,10 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 	switch (dihanje_state)
 	{
 		case MODE_STATE_FIRST_RUN:	//First time: init local settings, etc
+      ClrError(&Err_Limit_PeakPreasure);
+      ClrError(&Err_Limit_MaxTidalVolume);
+      ClrError(&Err_Limit_MinPressure);
+      ClrError(&Err_Limit_MinTidalVolume);
       SET_PEEP = Settings->PEEP/10.0;
       SETexp_time = 0;  //First time skip to insp_init
       timing=0;
@@ -246,13 +231,17 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       if (Measured->volume_t > MAXvolume)
       {
         IncError(&Err_Limit_MaxTidalVolume);
+        DecError(&Err_Limit_MinTidalVolume);
+        DecError(&Err_Limit_PeakPreasure);
         if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
         else DecError(&Err_Limit_MinPressure);
         dihanje_state=MODE_STATE_EXP_START;
       }
       if (Measured->pressure > MAXpressure)
       {
+        DecError(&Err_Limit_MaxTidalVolume);
         IncError(&Err_Limit_PeakPreasure);
+        DecError(&Err_Limit_MinPressure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
         dihanje_state=MODE_STATE_EXP_START;
@@ -260,6 +249,8 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
       {
         ReportError(Info_Limits_MaxPosition,FSH("Max Motor Position"));
+        DecError(&Err_Limit_MaxTidalVolume);
+        DecError(&Err_Limit_PeakPreasure);
         if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
         else DecError(&Err_Limit_MinPressure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);

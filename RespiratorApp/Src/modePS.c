@@ -22,25 +22,6 @@ float AVG(float new_x, int reset, float reset_val);
 
 void modePS(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
-  static ErrStatistics_t  Err_Limit_PeakPreasure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_PeakPressure,Warning_Limits_PeakPreassure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MaxTidalVolume={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MaxTidalVolume,Warning_Limits_MaxTidalVolume,Error_Limits_MaxTidalVolume};
-
-  static ErrStatistics_t  Err_Limit_MinPressure={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinPressure,Warning_Limits_MinPressure,Error_Limits_PeakPreassure};
-
-  static ErrStatistics_t  Err_Limit_MinTidalVolume={0,ERR_STATUS_OK,
-      DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
-      DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
-      Info_Limits_MinTidalVolume,Warning_Limits_MinTidalVolume,Error_Limits_MinTidalVolume};
 
 static  ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
 static  int16_t timing;
@@ -74,7 +55,6 @@ static  float FilteredFlow=0;
 static uint16_t Measured_ExpTime=0;
 static uint16_t Measured_InspTime=0;
 static uint16_t Measured_PrampTime=0;
-static uint16_t Measured_PreStartTime=0;
 static float MaxMeasuredVolume;
 static float sumAirwayPressure;
 static float peakExpFlow;
@@ -96,16 +76,15 @@ static float peakExpFlow;
 	switch (dihanje_state)
 	{
 		case MODE_STATE_FIRST_RUN:	//First time: init local settings, etc
-      SETInspTrig = Settings->trigger_pressure/10.0;
-      SETinsp_time = MAX_PS_INSP_TIME;
-      SETapnea_time = Settings->limit_apnea_time_max;
+      ClrError(&Err_Limit_PeakPreasure);
+      ClrError(&Err_Limit_MaxTidalVolume);
+      ClrError(&Err_Limit_MinPressure);
+      ClrError(&Err_Limit_MinTidalVolume);
+		  SETapnea_time = 0;
       SETpramp_time = Settings->target_Pramp_time;
       SET_PEEP = Settings->PEEP/10.0;
-      SETpressure = Settings->target_pressure/10.0;
-      MAXpressure = Settings->limit_PeakInspPressure/10.0;
-      MAXvolume = Settings->target_tidal_volume;
       dihanje_state=MODE_STATE_EXP_START;
-		break;
+    //break;  //BRAKE is not needed here.
 
 		case MODE_STATE_EXP_START: // zacetek vdiha, preveri, ce so klesce narazen, sicer jih daj narazen
       Control->mode = CTRL_PAR_MODE_TARGET_POSITION;
@@ -218,7 +197,6 @@ static float peakExpFlow;
       Pramp_rate = (SETPrampPressure - SET_PEEP - (SETPrampPressure-SET_PEEP)/4)/ MAX_PRAMP_TIME;
       SETPrampStartPressure = SETPrampPressure - SETpramp_time*Pramp_rate;
 
-      Measured_PreStartTime=0;
       Measured_PrampTime=0;
       Measured_InspTime=0;
       Measured_ExpTime=0;
@@ -261,7 +239,6 @@ static float peakExpFlow;
       {
         Control->mode=CTRL_PAR_MODE_REGULATE_PRESSURE;
         Control->target_pressure = FIRtargetP(SETPrampStartPressure,0,0);
-        Measured_PreStartTime=timing;
         SETapnea_time = SETapnea_time - PreStartBoostTime;
         timing=0;
         dihanje_state=MODE_STATE_INSP_PRAMP;
@@ -272,7 +249,6 @@ static float peakExpFlow;
         Control->target_pressure = FIRtargetP(SETPrampPressure,0,0);
         SETapnea_time = SETapnea_time - (PreStartBoostTime + timing);
         Measured_PrampTime=0;
-        Measured_PreStartTime=timing;
         timing = 0;
         dihanje_state = MODE_STATE_INSP_CONST_P;	//direktno na const. pressure step
       }
@@ -303,12 +279,12 @@ static float peakExpFlow;
       if (FilteredFlow < MAXinspiriaFlow*SET_ETSfactor)
       {
           ReportError(DbgMsg,FSH("ETS reached"));
-          DecError(&Err_Limit_PeakPreasure);
-          DecError(&Err_Limit_MaxTidalVolume);
           if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
           else DecError(&Err_Limit_MinPressure);
+          DecError(&Err_Limit_PeakPreasure);
           if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
           else DecError(&Err_Limit_MinTidalVolume);
+          DecError(&Err_Limit_MaxTidalVolume);
           dihanje_state=MODE_STATE_EXP_START;
       }
 
@@ -316,40 +292,43 @@ static float peakExpFlow;
       if (timing > SETinsp_time)
       {
           ReportError(DbgMsg,FSH("Max time reached."));
-          DecError(&Err_Limit_PeakPreasure);
-          DecError(&Err_Limit_MaxTidalVolume);
           if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
           else DecError(&Err_Limit_MinPressure);
+          DecError(&Err_Limit_PeakPreasure);
+
           if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
           else DecError(&Err_Limit_MinTidalVolume);
+          DecError(&Err_Limit_MaxTidalVolume);
           dihanje_state = MODE_STATE_EXP_START;
       }
       if (Measured->volume_t > MAXvolume)
       {
-        DecError(&Err_Limit_PeakPreasure);
-        IncError(&Err_Limit_MaxTidalVolume);
         if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
         else DecError(&Err_Limit_MinPressure);
+        DecError(&Err_Limit_PeakPreasure);
+        DecError(&Err_Limit_MinTidalVolume);
+        IncError(&Err_Limit_MaxTidalVolume);
         dihanje_state=MODE_STATE_EXP_START;
       }
       if (Measured->pressure > MAXpressure)
       {
-        DecError(&Err_Limit_MaxTidalVolume);
+        DecError(&Err_Limit_MinPressure);
         IncError(&Err_Limit_PeakPreasure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
+        DecError(&Err_Limit_MaxTidalVolume);
         dihanje_state=MODE_STATE_EXP_START;
       }
       //Errors:
       if (Control->cur_position >= CTRL_PAR_MAX_POSITION)	//Came too far - wait in this position until insp
       {
         ReportError(Info_Limits_MaxPosition,FSH("Max Motor Position"));
-        DecError(&Err_Limit_PeakPreasure);
-        DecError(&Err_Limit_MaxTidalVolume);
         if (Measured->pressure < MINpressure) IncError(&Err_Limit_MinPressure);
         else DecError(&Err_Limit_MinPressure);
+        DecError(&Err_Limit_PeakPreasure);
         if (Measured->volume_t < MINvolume) IncError(&Err_Limit_MinTidalVolume);
         else DecError(&Err_Limit_MinTidalVolume);
+        DecError(&Err_Limit_MaxTidalVolume);
         dihanje_state = MODE_STATE_EXP_START;
       }
       break;

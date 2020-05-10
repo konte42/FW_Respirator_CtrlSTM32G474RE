@@ -12,32 +12,40 @@
 #include "main.h"
 extern UART_HandleTypeDef hlpuart1;
 
+GlobalErrStatus_t GlobalErrorStatus;
 int buzzerState=0;
 int buzzerMute=0; //
 
-void ErrorBuzzer()
+ErrStatistics_t  Err_Limit_PeakPreasure={0,ERR_STATUS_OK,
+    DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+    DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+    Info_Limits_PeakPressure,Warning_Limits_PeakPreassure,Error_Limits_PeakPreassure};
+
+ErrStatistics_t  Err_Limit_MaxTidalVolume={0,ERR_STATUS_OK,
+    DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+    DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+    Info_Limits_MaxTidalVolume,Warning_Limits_MaxTidalVolume,Error_Limits_MaxTidalVolume};
+
+ErrStatistics_t  Err_Limit_MinPressure={0,ERR_STATUS_OK,
+    DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+    DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+    Info_Limits_MinPressure,Warning_Limits_MinPressure,Error_Limits_MinPressure};
+
+ErrStatistics_t  Err_Limit_MinTidalVolume={0,ERR_STATUS_OK,
+    DEFAULT_WARNING_THERSHOLD_LOW,DEFAULT_WARNING_THERSHOLD_HIGH,
+    DEFAULT_ERROR_THERSHOLD_LOW,DEFAULT_ERROR_THERSHOLD_HIGH,DEFAULT_ERR_MAX_COUNT,
+    Info_Limits_MinTidalVolume,Warning_Limits_MinTidalVolume,Error_Limits_MinTidalVolume};
+
+void ErrorStatusUpadate(GlobalErrors_t err, ErrStatus_t status)
 {
-  if (buzzerMute > 0)
+  if (err <= ErrPressureSensor)
   {
-    BUZZ_Off();
-    buzzerMute--;
-    buzzerState=0;
+    GlobalErrorStatus.errors1 &= ~(3 << (err*2)); //clear ERR bits of this error
+    GlobalErrorStatus.errors1 |= (status << (err*2)); //set appropriate error
   }
   else
   {
-    if (buzzerState == 1) //Warning beep once a second
-    {
-      if ((HAL_GetTick() % 1000) < 200) BUZZ_On();
-      else BUZZ_Off();
-    }
-    else if (buzzerState > 1)
-    {
-      BUZZ_On();
-    }
-    else
-    {
-      BUZZ_Off();
-    }
+    ReportError(Error_UnknownGlobalSystemError,FSH("Error: Global error update request for unknown error."));
   }
 }
 
@@ -48,7 +56,7 @@ void IncError(ErrStatistics_t *err)
 
   if (err->status == ERR_STATUS_OK)
   {
-      if (err->cnt > err->WarningHighThreshold)
+      if (err->cnt >= err->WarningHighThreshold)
       {
         err->status = ERR_STATUS_WARNING;
         if (buzzerState < 2) buzzerState = 1;
@@ -56,7 +64,7 @@ void IncError(ErrStatistics_t *err)
   }
   else if (err->status == ERR_STATUS_WARNING)
   {
-    if (err->cnt > err->ErrorHighThreshold)
+    if (err->cnt >= err->ErrorHighThreshold)
     {
       err->status = ERR_STATUS_ERROR;
       buzzerState = 2;
@@ -106,6 +114,38 @@ void DecError(ErrStatistics_t *err)
   else if (err->status == ERR_STATUS_ERROR)
   {
     ReportError(err->error,GetErrorString(err->error));
+  }
+}
+
+void ClrError(ErrStatistics_t *err)
+{
+  err->cnt=0;
+  err->status = ERR_STATUS_OK;
+}
+
+void ErrorBuzzer()
+{
+  if (buzzerMute > 0)
+  {
+    BUZZ_Off();
+    buzzerMute--;
+    buzzerState=0;
+  }
+  else
+  {
+    if (buzzerState == 1) //Warning beep once a second
+    {
+      if ((HAL_GetTick() % 1000) < 200) BUZZ_On();
+      else BUZZ_Off();
+    }
+    else if (buzzerState > 1)
+    {
+      BUZZ_On();
+    }
+    else
+    {
+      BUZZ_Off();
+    }
   }
 }
 

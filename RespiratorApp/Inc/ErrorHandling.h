@@ -14,9 +14,9 @@
 
 #define DEFAULT_WARNING_THERSHOLD_LOW   1
 #define DEFAULT_WARNING_THERSHOLD_HIGH  2
-#define DEFAULT_ERROR_THERSHOLD_LOW     4
-#define DEFAULT_ERROR_THERSHOLD_HIGH    5
-#define DEFAULT_ERR_MAX_COUNT 6
+#define DEFAULT_ERROR_THERSHOLD_LOW     3
+#define DEFAULT_ERROR_THERSHOLD_HIGH    4
+#define DEFAULT_ERR_MAX_COUNT 5
 
 #define USE_DEFAULT_ERROR_REPORTER	1
 //Default Error reporter just stores errors in an Error Queue
@@ -32,14 +32,18 @@
 typedef enum ErrCodes
 {
 	NoError = 0x0000,
-	//0x01 - 0x001F: Informational messages
-  ErrQueueEmpty = 0x01,    //This is ok - no errors
-  DbgMsg = 0x02,
+	//0x0001 - 0x001F: Informational messages
+  ErrQueueEmpty = 0x0001,    //This is ok - no errors
+  DbgMsg = 0x0002,
 
-  Info_Limits_MaxPosition = 0x10,
+  Info_Limits_MaxPosition = 0x0010,
+  Info_Battery_Not_Fully_Charged,
 
-  //0xA0 - 0xBF: Communication errors
-  ComRxUnknownParameter = 0xA0,
+  //0x0020 - ...: Warnings
+  Warning_OnBatteryPower = 0x0020,
+
+  //0x00A0 - 0x00BF: Communication errors
+  ComRxUnknownParameter = 0x00A0,
   ComRxNoSpaceAfterParam,
   ComRxExpectingNumber,
   ComRxNoEtx,
@@ -68,12 +72,14 @@ typedef enum ErrCodes
   ComRxPIDmaxOutOutsideLimits,
   ComRxPIDminOutOutsideLimits,
 
-  //0xC0 - 0xDF: System errors
-  ComRxBuffOverrun = 0xC0,
+  //0x00C0 - 0x00DF: System errors
+  ComRxBuffOverrun = 0x00C0,
   ComRxUnknownState,
+  Error_BatteryAlmostEmpty,
+  Error_UnknownGlobalSystemError,
 
-  //0xE0 - 0xFF: System errors - critical
-  ActuatorCtrlUnknownMode = 0xE0,
+  //0x00E0 - 0x00FF: System errors - critical
+  ActuatorCtrlUnknownMode = 0x00E0,
   ModeUnknownMode,
   ModeCMV_UnknownState,
   ModePCV_UnknownState,
@@ -95,16 +101,31 @@ typedef enum ErrCodes
   Error_Limits_MinPressure,
   Error_Limits_MinTidalVolume,
   Error_Limits_MaxTidalVolume,
-
 } ErrCodes_t;
 
+typedef enum {
+  ErrPowerSupply          = 0x00,
+  ErrPowerNoBattery       = 0x01,
+  ErrMotorPositionSensor  = 0x02,
+  ErrFlowSensor           = 0x03,
+  ErrPressureSensor       = 0x04
+} GlobalErrors_t;
+
+typedef struct GLOBAL_ERR_STATUS_T{
+  uint32_t  errors1;
+} GlobalErrStatus_t;
+
+GlobalErrStatus_t GlobalErrorStatus;
+
+#define GLOBAL_ERROR_STATUS_SIZE  sizeof(GlobalErrStatus_t)
+
 typedef enum ERR_STATUS_T{
-  ERR_STATUS_OK,
-  ERR_STATUS_WARNING,
-  ERR_STATUS_ERROR
+  ERR_STATUS_OK = 0x00,
+  ERR_STATUS_WARNING = 0x01,
+  ERR_STATUS_ERROR = 0x10
 } ErrStatus_t;
 
-typedef struct ERR_STATISTIC_T{
+typedef struct ERR_STATISTICS_T{
   int cnt;
   ErrStatus_t status;
   int WarningLowThreshold;
@@ -115,8 +136,7 @@ typedef struct ERR_STATISTIC_T{
   ErrCodes_t info;
   ErrCodes_t warning;
   ErrCodes_t error;
-} ErrStatistics_t;
-
+} ErrStatistics_t;  //Errors that need to happen a few times
 
 #define ERROR_QUEUE_LENGTH	50
 #define ERROR_QUEUE_STOP_WHEN_FULL	1
@@ -128,13 +148,20 @@ typedef struct ERR_QUEUE{
 	uint8_t QueueNum;						//Number of stored data in buffer
 } ErrQueue_t;
 
+ErrStatistics_t  Err_Limit_PeakPreasure;
+ErrStatistics_t  Err_Limit_MaxTidalVolume;
+ErrStatistics_t  Err_Limit_MinPressure;
+ErrStatistics_t  Err_Limit_MinTidalVolume;
+
 void IncError(ErrStatistics_t *err);
 void DecError(ErrStatistics_t *err);
+void ClrError(ErrStatistics_t *err);
 char* GetErrorString(ErrCodes_t errorCode);
 
 extern ErrQueue_t DefaultErrorQueue;
 extern int buzzerMute;
 
+void ErrorStatusUpadate(GlobalErrors_t err, ErrStatus_t status);
 void ErrQueue_Init(struct ERR_QUEUE *ErrQueue);
 void ErrQueue_StoreErr (ErrCodes_t ErrCode, struct ERR_QUEUE *ErrQueue);	//No point in returning error - who to? This is the error handling code.
 ErrCodes_t ErrQueue_GetErr (ErrCodes_t* ErrCode, struct ERR_QUEUE *ErrQueue);
