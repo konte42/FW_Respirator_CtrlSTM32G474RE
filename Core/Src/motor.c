@@ -74,23 +74,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 }
 
-void motor_SetSpeed(float speed)	// -100 - 100
+void motor_SetPower(float power)	// -100 - 100
 {
 	uint16_t dc;
 
-	if (speed > 0)
+	if (power > 0)
 	{
-		if (speed > 100) speed = 100;
+		if (power > 100) power = 100;
 		if (MotorDir!=MOTOR_DIR_VDIH) motor_SetDir(MOTOR_DIR_VDIH);
-		dc = (uint16_t)(speed / 100.0 * (MOTOR_MAX_DC-MOTOR_MIN_DC)) + MOTOR_MIN_DC;
+		dc = (uint16_t)(power / 100.0 * (MOTOR_MAX_DC-MOTOR_MIN_DC)) + MOTOR_MIN_DC;
 		motor_SetRawDutyCycle(dc);
 	}
-	else if (speed < 0)
+	else if (power < 0)
 	{
-		speed = -speed;
-		if (speed > 100) speed = 100;
+		power = -power;
+		if (power > 100) power = 100;
 		if (MotorDir!=MOTOR_DIR_IZDIH) motor_SetDir(MOTOR_DIR_IZDIH);
-		dc = (uint16_t)(speed / 100.0 * MOTOR_MAX_DC);
+		dc = (uint16_t)(power / 100.0 * MOTOR_MAX_DC);
 		motor_SetRawDutyCycle(dc);
 	}
 	else  //if (speed = 0) stop, maintain direction and use appropriate MIN duty cycle

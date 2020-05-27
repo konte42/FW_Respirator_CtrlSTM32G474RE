@@ -22,27 +22,27 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 	{
 // STOP MODES ///////////////////////////////////////////////////////////////////////
 		case CTRL_PAR_MODE_STOP:
-			motor_SetSpeed(0);
+			motor_SetPower(0);
 			PID_fReset(PIDdata);
 			break;
 
 		case CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION:
-      motor_SetSpeed(0.01);  //turn motor direction to close (inhale) and
+      motor_SetPower(0.01);  //turn motor direction to close (inhale) and
 			break;                 //maintain minimum duty cycle to hold clamps together
 
-// SPEED CONTROL MODE ///////////////////////////////////////////////////////////
-		case CTRL_PAR_MODE_TARGET_SPEED:
-			if (Control->target_speed > 0)
+// POWER CONTROL MODE ///////////////////////////////////////////////////////////
+		case CTRL_PAR_MODE_TARGET_POWER:
+			if (Control->target_power > 0)
 			{
 				if (Control->cur_position < CTRL_PAR_MAX_POSITION)	//Obey if within limits
-				  { motor_SetSpeed(Control->target_speed);}
-				else {  motor_SetSpeed(0); }	//Stop if too far
+				  { motor_SetPower(Control->target_power);}
+				else {  motor_SetPower(0); }	//Stop if too far
 			}
-			else //else if (Control->target_speed < 0)
+			else //else if (Control->target_power < 0)
 			{
 				if (Control->cur_position > CTRL_PAR_MIN_POSITION)	//Obey if within limits
-				  { motor_SetSpeed(Control->target_speed);}
-        else {  motor_SetSpeed(0); }  //Stop if too far
+				  { motor_SetPower(Control->target_power);}
+        else {  motor_SetPower(0); }  //Stop if too far
 			}
 			break;
 
@@ -55,7 +55,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 			}
 			if (motorSpeed > 0)
 			{
-				motor_SetSpeed(motorSpeed);
+				motor_SetPower(motorSpeed);
 			}
 			
 		break;
@@ -68,7 +68,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;
-          motor_SetSpeed(0);
+          motor_SetPower(0);
 				}
 			}
 			if (Control->target_position - Control->cur_position < 0)
@@ -77,10 +77,10 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;
-					motor_SetSpeed(0);
+					motor_SetPower(0);
 				}
 			}
-			motor_SetSpeed(motorSpeed);
+			motor_SetPower(motorSpeed);
 		break;
 
 // PRESSURE REGULATION MODES ///////////////////////////////////////////////////////////
@@ -98,17 +98,17 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 		case CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE:
 			//can only regulate inspiration		//pressure span 50mmH2O --> cca 14500 (14500/16 = cca 900)
 			motorSpeed = PID_fCalculate(1,Control->target_pressure, Measured->pressure, PIDdata);
-			if (Control->target_speed > 0)
+			if (Control->target_power > 0)
 			{
 				if (Control->cur_position < CTRL_PAR_MAX_POSITION)	//Obey if within limits
-				{ motor_SetSpeed(Control->target_speed); }
-				else { motor_SetSpeed(0); } //Stop if too far
+				{ motor_SetPower(Control->target_power); }
+				else { motor_SetPower(0); } //Stop if too far
 			}
 			else // if (Control->target_speed < 0)
 			{
 				if (Control->cur_position > CTRL_PAR_MIN_POSITION)	//Obey if within limits
-        { motor_SetSpeed(Control->target_speed); }
-        else { motor_SetSpeed(0); } //Stop if too far
+        { motor_SetPower(Control->target_power); }
+        else { motor_SetPower(0); } //Stop if too far
 			}
 			break;
 
@@ -131,7 +131,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 				motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
 			if (motorSpeed < 0) motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
-			motor_SetSpeed(motorSpeed);
+			motor_SetPower(motorSpeed);
 		break;
 
 // VOLUME REGULATION MODES ///////////////////////////////////////////////////////////
@@ -149,17 +149,17 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
     case CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME:
       //can only regulate inspiration   //pressure span 50mmH2O --> cca 14500 (14500/16 = cca 900)
       motorSpeed = PID_fCalculate(1,Control->target_volume, Measured->volume_t, PIDdata);
-      if (Control->target_speed > 0)
+      if (Control->target_power > 0)
       {
         if (Control->cur_position < CTRL_PAR_MAX_POSITION)  //Obey if within limits
-        { motor_SetSpeed(Control->target_speed); }
-        else { motor_SetSpeed(0); } //Stop if too far
+        { motor_SetPower(Control->target_power); }
+        else { motor_SetPower(0); } //Stop if too far
       }
       else // if (Control->target_speed < 0)
       {
         if (Control->cur_position > CTRL_PAR_MIN_POSITION)  //Obey if within limits
-        { motor_SetSpeed(Control->target_speed); }
-        else { motor_SetSpeed(0); } //Stop if too far
+        { motor_SetPower(Control->target_power); }
+        else { motor_SetPower(0); } //Stop if too far
       }
       break;
 
@@ -182,7 +182,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
         motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
       }
       if (motorSpeed < 0) motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
-      motor_SetSpeed(motorSpeed);
+      motor_SetPower(motorSpeed);
     break;
 
 // FLOW REGULATION MODES ///////////////////////////////////////////////////////////
@@ -200,17 +200,17 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
     case CTRL_PAR_MODE_DUMMY_REGULATE_FLOW:
       //can only regulate inspiration
       motorSpeed = PID_fCalculate(1,Control->target_flow, Measured->flow, PIDdata);
-      if (Control->target_speed > 0)
+      if (Control->target_power > 0)
       {
         if (Control->cur_position < CTRL_PAR_MAX_POSITION)  //Obey if within limits
-        { motor_SetSpeed(Control->target_speed); }
-        else { motor_SetSpeed(0); } //Stop if too far
+        { motor_SetPower(Control->target_power); }
+        else { motor_SetPower(0); } //Stop if too far
       }
       else // if (Control->target_speed < 0)
       {
         if (Control->cur_position > CTRL_PAR_MIN_POSITION)  //Obey if within limits
-        { motor_SetSpeed(Control->target_speed); }
-        else { motor_SetSpeed(0); } //Stop if too far
+        { motor_SetPower(Control->target_power); }
+        else { motor_SetPower(0); } //Stop if too far
       }
       break;
 
@@ -233,7 +233,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
         motorSpeed = 0.01;  //minimum speed setting to maintain inhale direction and minimum clamp pressure
 			}
       if (motorSpeed<0) motorSpeed = 0.01;
-      motor_SetSpeed(motorSpeed);
+      motor_SetPower(motorSpeed);
 		break;
 
 ///////////////////////////////////////////////////////////////////////////////////
@@ -241,7 +241,7 @@ void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSett
 		default: //Error: Stop immediately
 		ReportError(ActuatorCtrlUnknownMode,FSH("Unknown actuator control mode"));
 		Control->mode=CTRL_PAR_MODE_TARGET_POSITION;
-		motor_SetSpeed(0);
+		motor_SetPower(0);
 		break;
 	}
 

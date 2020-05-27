@@ -6,7 +6,7 @@
  */ 
 #include "Measure.h"
 #include <math.h>
-#define FLOW_ZERO   32410
+#define FLOW_ZERO   32420.0
 
 void MeasureInit()
 {
@@ -15,6 +15,7 @@ void MeasureInit()
 void MeasureFlow(MeasuredParams_t* Measured)
 {
 	uint16_t *ADC_Results;
+	float a,b,c,d; //koeficienti polinoma za kalibracijo
 	float flow_positive;
 #ifdef PROTOTYPE_V1
 	float flow_negative;
@@ -30,29 +31,57 @@ void MeasureFlow(MeasuredParams_t* Measured)
 	if (flow_positive > flow_negative)
 	{
 		x=flow_positive;
-		flow = -2.60967E-08*x*x + 5.33758E-03*x - 4.0E+01;//pozitivna stran
+		flow = -2.60967E-08*x*x + 5.33758E-03*x - 45.4;//pozitivna stran
 	}
 	else
 	{
 		x=flow_negative;
-		flow = -(-3.56553E-08*x*x + 5.68075E-03*x - 4.1E+01);
+		flow = -(-3.56553E-08*x*x + 5.68075E-03*x - 45.4);
 	}
 #elif defined(PROTOTYPE_V2)
-  x=flow_positive - FLOW_ZERO;
-	if (x > 0)  //inspiria
-  {
-	  x=flow_positive - FLOW_ZERO;
-    flow = -2.7090229E-07*x*x + 1.7542158E-02*x;
-  }
-  else  //expiria
-  {
-    x=FLOW_ZERO - flow_positive;
-    flow = -(-4.23993E-07*x*x + 1.86869E-02*x);
-  }
-	if (fabs(flow) < 0.2) flow = 0;
-#else
+
+	x = flow_positive - FLOW_ZERO;	//odstej offset
+
+
+
+	if (x < -2900.0)  //polinom 1
+	{
+		if (x<FLOW_RANGE_MIN) x = FLOW_RANGE_MIN;
+		a=0.0;
+		b=1.78655E-07;
+		c=0.01418606;
+		d=-14.7;
+	}
+	else if (x<0.0)	//polinom 2
+	{
+		a=-7.94439E-10;
+		b=-2.66738E-06;
+		c=0.0176807;
+		d=0.0;
+	}
+	else if (x<3200.0) //polinom 3
+	{
+		a=-3.04523E-10;
+		b=6.15348E-07;
+		c=0.01833781;
+		d=0.0;
+	}
+	else	//polinom 4
+	{
+		if (x>FLOW_RANGE_MAX) x = FLOW_RANGE_MAX;
+		a=0.0;
+		b=-1.14179E-07;
+		c=0.01353111;
+		d=12.9;
+	}
+
+	flow = ((a*x+b)*x+c)*x+d;	//more efficient coding.
+  #else
 #error Prototype version not defined.
 #endif
+	if (flow < FLOW_ZERO_TRESHOLD && flow > -FLOW_ZERO_TRESHOLD) flow = 0.0;
+	if (flow >FLOW_MAX_LPERMIN) flow=FLOW_MAX_LPERMIN;
+	if (flow <FLOW_MIN_LPERMIN) flow=FLOW_MIN_LPERMIN;
 	Measured->flow=flow;
 }
 
@@ -63,9 +92,9 @@ void MeasurePressure(MeasuredParams_t* Measured)
 	
 	ADC_Results=ADC_results_p();
 	
-	pressure = (int32_t)(*(ADC_Results+ADC_CH_PRESSURE)) - PRESSURE_MIN;
+	pressure = (int32_t)(*(ADC_Results+ADC_CH_PRESSURE)) - PRESSURE_RANGE_MIN;
 	if (pressure<PRESSURE_ZERO_TRESHOLD && pressure>-PRESSURE_ZERO_TRESHOLD) pressure = 0;
-	
+	if (pressure>PRESSURE_ABSOLUTE_MAX) pressure = PRESSURE_ABSOLUTE_MAX;
 	Measured->pressure=(float)pressure/(float)PRESSURE_SPAN * (float)PRESSURE_MAX_CMH2O;
 }
 

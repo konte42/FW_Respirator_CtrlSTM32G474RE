@@ -18,7 +18,7 @@
 //#define PROTOTYPE_V1
 
 //app defines
-#define MSG_CORE_LENGTH	25
+#define MSG_CORE_LENGTH	25+12
 #ifdef AVR
 #define TIME_SLICE_MS	2	//Timeslice in ms
 #else
@@ -45,6 +45,7 @@
 #define SETTINGS_DEFAULT_APNEA_LIMIT_TIME_MS  5000  // 20s
 #define SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR	100		// mmH2O
 #define SETTINGS_DEFAULT_MAX_PRESSURE_MBAR		400		// mmH2O
+#define SETTINGS_DEFAULT_TARGET_MOTOR_SPEED	50	//	50%
 #define SETTINGS_DEFAULT_PEEP					        50		// mmH2O
 #define SETTINGS_DEFAULT_TARGET_VOLUME_ML		  1500		// milliliters
 #define SETTINGS_DEFAULT_INSP_TRIGGER         10  // -1cmH2O
@@ -104,6 +105,12 @@
 //#define SETTINGS_TIDAL_VOLUME_MAX       1500
 #define SETTINGS_TIDAL_VOLUME_MAX       2000
 
+#define SETTINGS_MOTOR_POWER_MIN		-100
+#define SETTINGS_MOTOR_POWER_MAX		100
+
+#define SETTINGS_MOTOR_SPEED_MIN		-100
+#define SETTINGS_MOTOR_SPEED_MAX		100
+
 #define SETTINGS_TRIG_PRESSURE_MIN        5
 #define SETTINGS_TRIG_PRESSURE_MAX        20
 #define SETTINGS_ETS_MIN                  25
@@ -118,14 +125,14 @@
 #define SETTINGS_MAX_VT_LIMIT_MAX         1500
 
 #define SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MIN 1000
-#define SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX 20000
+#define SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX 30000
 #define SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN 1000
-#define SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX 20000
+#define SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX 30000
 
 #define SETTINGS_MIN_BREATH_RATE_LIMIT_MIN   1
-#define SETTINGS_MIN_BREATH_RATE_LIMIT_MAX   30
+#define SETTINGS_MIN_BREATH_RATE_LIMIT_MAX   50
 #define SETTINGS_MAX_BREATH_RATE_LIMIT_MIN   1
-#define SETTINGS_MAX_BREATH_RATE_LIMIT_MAX   30
+#define SETTINGS_MAX_BREATH_RATE_LIMIT_MAX   50
 
 #define SETTINGS_MUTE_TIME_MIN   1000
 #define SETTINGS_MUTE_TIME_MAX   300000
@@ -174,23 +181,25 @@ typedef struct RESPIRATOR_SETTINGS{
 	uint16_t target_Pramp_time;
 	uint16_t target_inspiria_time;
 	uint16_t target_expiria_time;
-  uint16_t limit_apnea_time_max;
-  uint16_t target_tidal_volume;
-  uint16_t limit_tidal_volume_min;
-  uint16_t limit_tidal_volume_max;
-  uint16_t limit_minute_volume_min;
-  uint16_t limit_minute_volume_max;
-  uint16_t limit_breath_rate_min;
-  uint16_t limit_breath_rate_max;
+	uint16_t limit_apnea_time_max;
+	uint16_t target_tidal_volume;
+	uint16_t limit_tidal_volume_min;
+	uint16_t limit_tidal_volume_max;
+	uint16_t limit_minute_volume_min;
+	uint16_t limit_minute_volume_max;
+	uint16_t limit_breath_rate_min;
+	uint16_t limit_breath_rate_max;
 	uint16_t PEEP;
-  uint16_t limit_InspPressure_min;
-  uint16_t limit_PeakInspPressure;
+	uint16_t limit_InspPressure_min;
+	uint16_t limit_PeakInspPressure;
 	uint16_t target_pressure;
-  uint16_t trigger_pressure; // PCAP-PS inhale trigger
-  uint16_t ETS;              // Expiria Stop trigger
+	uint16_t trigger_pressure; // PCAP-PS inhale trigger
+	uint16_t ETS;              // Expiria Stop trigger
+	int16_t target_motor_power;	//debug HW test
+	int16_t target_motor_speed;	//debug HW test
 	fpidSettings_t PID_Pressure;
-  fpidSettings_t PID_Flow;
-  fpidSettings_t PID_Volume;
+	fpidSettings_t PID_Flow;
+	fpidSettings_t PID_Volume;
 } RespSettings_t;
 
 //Measured Parameters
@@ -213,7 +222,7 @@ typedef struct MEASURED_PARAMS{
 //Control Parameters
 #define CTRL_PAR_MODE_STOP									            0
 #define CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION				  1
-#define CTRL_PAR_MODE_TARGET_SPEED							        2
+#define CTRL_PAR_MODE_TARGET_POWER							        2
 #define CTRL_PAR_MODE_TARGET_POSITION_INHALE				    3
 #define CTRL_PAR_MODE_TARGET_POSITION						        4
 #define CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET 5
@@ -236,8 +245,8 @@ typedef struct MEASURED_PARAMS{
 #define CTR_REPRDY_EXP   1
 
 typedef struct CONTROL_PARAMS{
-	uint8_t mode;		//regulate speed/position
-	float target_speed;	// max: +-100%
+	uint8_t mode;		//regulate power/position/...
+	float target_power;	// max: +-100%
 	float target_position;	// max: +100%, 0 = completely exhaled, theoretically should not go below 0
 	float cur_speed;	// %/ms (calculated from the current an last position)
 	float cur_position;	// 0-100
@@ -265,6 +274,7 @@ typedef enum
   MODE_STATE_INSP_PREP_3,
   MODE_STATE_INSP_PRAMP = 0x30,   //48
   MODE_STATE_INSP_CONST_P,
+  MODE_STATE_INSP_CONST_S,
   MODE_STATE_INSP_CONST_F,
   MODE_STATE_INSP_COMPLETE_ETS_TRIG = 0x40,  //64
   MODE_STATE_INSP_COMPLETE_MAX_VOL,

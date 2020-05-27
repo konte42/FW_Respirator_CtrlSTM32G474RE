@@ -24,11 +24,11 @@
 
 #ifdef PROTOTYPE_V1
 //#define MOTOR_POS_RAW_OPEN  50500 // --> 0
-#define MOTOR_POS_RAW_OPEN  49500 // --> 0
+#define MOTOR_POS_RAW_OPEN  45236 // --> 0
 //#define MOTOR_POS_RAW_CLOSED  44700// -->?
-#define MOTOR_POS_RAW_CLOSED  44100// -->?
-#define MOTOR_POS_BREAKINGPOINT_OPEN  54200
-#define MOTOR_POS_BREAKINGPOINT_CLOSED 44600
+#define MOTOR_POS_RAW_CLOSED  40700// -->?
+#define MOTOR_POS_BREAKINGPOINT_OPEN  40000
+#define MOTOR_POS_BREAKINGPOINT_CLOSED 47000
 #elif defined(PROTOTYPE_V2)
 #define MOTOR_POS_RAW_OPEN  15900 // --> 0
 #define MOTOR_POS_RAW_CLOSED  62000// -->?
@@ -62,7 +62,7 @@ typedef enum
 }MotorDir_t;
 
 void motor_Init();
-void motor_SetSpeed(float speed);	//-100 - 100
+void motor_SetPower(float power);	//-100 - 100
 void motor_SetDutyCycle(uint16_t dutyCycle);
 void motor_SetRawDutyCycle(uint16_t dutyCycle);
 void motor_SetDir(MotorDir_t direction);

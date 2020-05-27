@@ -15,7 +15,7 @@
 #ifdef PROTOTYPE_V2
   #define GetPowerStatusBit1() HAL_GPIO_ReadPin(MAINS_BAT1_GPIO_Port,MAINS_BAT1_Pin)
   #define GetPowerStatusBit2() HAL_GPIO_ReadPin(MAINS_BAT2_GPIO_Port,MAINS_BAT2_Pin)
-#elif PROTOTYPE_V1
+#elif defined(PROTOTYPE_V1)
   #define GetPowerStatusBit1()  GPIO_PIN_SET
   #define GetPowerStatusBit2()  GPIO_PIN_SET
 #else

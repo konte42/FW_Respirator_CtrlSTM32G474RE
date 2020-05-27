@@ -131,6 +131,7 @@ int main(void)
 	  Settings.PEEP = SETTINGS_DEFAULT_PEEP;
 	  Settings.limit_PeakInspPressure = SETTINGS_DEFAULT_MAX_PRESSURE_MBAR;
     Settings.target_pressure = SETTINGS_DEFAULT_TARGET_PRESSURE_MBAR;
+    Settings.target_motor_speed = SETTINGS_DEFAULT_TARGET_MOTOR_SPEED;
     Settings.limit_tidal_volume_min = SETTINGS_DEFAULT_LIMIT_TIDAL_VOLUME_MIN;
     Settings.limit_tidal_volume_max = SETTINGS_DEFAULT_LIMIT_TIDAL_VOLUME_MAX;
     Settings.limit_minute_volume_min = SETTINGS_DEFAULT_MINUTE_VOLUME_MIN;
@@ -198,11 +199,11 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-#ifdef PROTOTYPE_V2
+//#ifdef PROTOTYPE_V2
   HAL_ADCEx_Calibration_Start(&hadc1, ADC_SINGLE_ENDED);
   HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
   HAL_ADCEx_Calibration_Start(&hadc3, ADC_SINGLE_ENDED);
-#endif
+//#endif
   Ringbuf0_Init();
   Ringbuf1_Init();
   HAL_TIM_Base_Start(&htim1);
@@ -304,10 +305,11 @@ int main(void)
       ErrQueue_GetErr(&err,&DefaultErrorQueue);
       mark2+=STATUS_REPORTING_PERIOD;
       motorPosition = motor_GetPosition();
-      length=PrepareStatusMessage(HAL_GetTick(),
+
+      length=PrepareStatusMessage(mark1ms,
            (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0),
            (int16_t)(Measured.volume_t*10.0), (int16_t)motorPosition,
-           (uint16_t)motor_GetCurrent(), motor_GetPWM(), Control.BreathCounter,
+           (uint16_t)motor_GetCurrent(), motor_GetSpeedSetting(), Control.BreathCounter,
            Control.status, err, Control.target_volume, msg);
       UART0_SendBytes(msg,length);
       UART1_SendBytes(msg,length);

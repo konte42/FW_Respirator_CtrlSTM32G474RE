@@ -46,9 +46,13 @@
 <stringAttribute key="com.st.stm32cube.ide.mcu.debug.swv.trace_events" value="Cpi=0:Exc=0:Sleep=0:Lsu=0:Fold=0:Exetrc=0"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doHalt" value="false"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.doReset" value="false"/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageFileName" value=""/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.imageOffset" value=""/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.initCommands" value=""/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.ipAddress" value="localhost"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.jtagDevice" value="ST-LINK (ST-LINK GDB server)"/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadImage" value="true"/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.loadSymbols" value="true"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.pcRegister" value=""/>
 <intAttribute key="org.eclipse.cdt.debug.gdbjtag.core.portNumber" value="61234"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.runCommands" value=""/>
@@ -56,6 +60,12 @@
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setResume" value="true"/>
 <booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.setStopAt" value="true"/>
 <stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.stopAt" value="main"/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsFileName" value=""/>
+<stringAttribute key="org.eclipse.cdt.debug.gdbjtag.core.symbolsOffset" value=""/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useFileForImage" value="false"/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useFileForSymbols" value="false"/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useProjBinaryForImage" value="true"/>
+<booleanAttribute key="org.eclipse.cdt.debug.gdbjtag.core.useProjBinaryForSymbols" value="true"/>
 <stringAttribute key="org.eclipse.cdt.dsf.gdb.DEBUG_NAME" value="${TOOLCHAIN_PATH}/arm-none-eabi-gdb"/>
 <booleanAttribute key="org.eclipse.cdt.dsf.gdb.NON_STOP" value="true"/>
 <booleanAttribute key="org.eclipse.cdt.dsf.gdb.UPDATE_THREADLIST_ON_SUSPEND" value="false"/>
@@ -64,7 +74,7 @@
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_START_MODE" value="remote"/>
 <booleanAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN" value="true"/>
 <stringAttribute key="org.eclipse.cdt.launch.DEBUGGER_STOP_AT_MAIN_SYMBOL" value="main"/>
-<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug\FW_Respirator_CtrlSTM32G474RE.elf"/>
+<stringAttribute key="org.eclipse.cdt.launch.PROGRAM_NAME" value="Debug/FW_Respirator_CtrlSTM32G474RE.elf"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_ATTR" value="FW_Respirator_CtrlSTM32G474RE"/>
 <booleanAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_AUTO_ATTR" value="true"/>
 <stringAttribute key="org.eclipse.cdt.launch.PROJECT_BUILD_CONFIG_ID_ATTR" value="com.st.stm32cube.ide.mcu.gnu.managedbuild.config.exe.debug.1375762698"/>

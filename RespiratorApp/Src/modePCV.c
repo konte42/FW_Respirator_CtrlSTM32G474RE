@@ -147,7 +147,7 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       Measured->volume_mode = VOLUME_INTEGRATE;
       Control->BreathCounter++;
       Control->mode=CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET;
-      Control->target_speed = PREP_CURRENT_START;  //20%
+      Control->target_power = PREP_CURRENT_START;  //20%
       PreStartBoostTime = PREP_T_TOTAL;
       timing=0;
       dihanje_state=MODE_STATE_INSP_PREP_1;
@@ -164,10 +164,10 @@ void modePCV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
 
     case MODE_STATE_INSP_PREP_2: //pre-start (get the motor going)
       timing += TIME_SLICE_MS;
-      Control->target_speed = PREP_CURRENT_START+(PREP_CURRENT_MAX-PREP_CURRENT_START)*(float)(timing-PREP_T_START)/(float)PREP_T_RAMP_I;
+      Control->target_power = PREP_CURRENT_START+(PREP_CURRENT_MAX-PREP_CURRENT_START)*(float)(timing-PREP_T_START)/(float)PREP_T_RAMP_I;
       if (timing >= (PREP_T_START+PREP_T_RAMP_I))
       {
-        Control->target_speed = PREP_CURRENT_MAX;
+        Control->target_power = PREP_CURRENT_MAX;
         dihanje_state=MODE_STATE_INSP_PREP_3;
       }
       break;

@@ -161,8 +161,8 @@ int PrepareStatisticsMessage(char *p_msg, int MAX_LENGTH, MetricsStatistics_t* p
 
 int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settings)
 {
-//  int length = sizeof(RespSettings_t);
-  int length = 36;
+  int length = sizeof(RespSettings_t);
+//  int length = 36;
   if (MAX_LENGTH >= length)
 	{
 		*p_msg = 0x56;
@@ -189,6 +189,7 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 //STX = '>'
 //ETX = '\n'
 //PARAM:
+//	's' = status
 //	'M' = mode
 //	'R' = rampup
 //  'I' = inspiria time (ms)
@@ -197,6 +198,8 @@ int ReportAllCurrentSettings(char *p_msg, int MAX_LENGTH, RespSettings_t *Settin
 //  'T' = PeakInspiratory Pressure
 //  't' = Min Pressure ????
 //  'S' = Target Pressure
+//  'p' = Target Motor Power (HW_test_mode)
+//  'm' = Target Motor Speed (HW_test_mode)
 //	'V' = volume (ml)
 //  'G' = Inhale Trigger pressure (mmH2O)
 //  'H' = ETS (%)
@@ -237,6 +240,8 @@ void ProcessMessages(char data, RespSettings_t* Settings, ProcMsgState_t* pstate
         case 'T':
         case 't':
 				case 'S':
+				case 'p':
+				case 'm':
         case 'V':
         case 'G':
 				case 'H':
@@ -322,25 +327,27 @@ void ProcessMessages(char data, RespSettings_t* Settings, ProcMsgState_t* pstate
 					//case statements are included in the below macros
 ValidateAndApplyReceivedValue('q', pstate->value*1000, buzzerMute,    SETTINGS_MUTE_TIME_MIN, SETTINGS_MUTE_TIME_MAX, ComRxMuteTimeOutsideLimits);
 ValidateAndApplyReceivedValue('R', pstate->value, Settings->target_Pramp_time,    SETTINGS_RAMPUP_MIN, SETTINGS_RAMPUP_MAX, ComRxRampOutsideLimits);
-ValidateAndApplyReceivedValue('I', pstate->value, Settings->target_inspiria_time, SETTINGS_INSPIRIA_TIME_MIN, SETTINGS_INSPIRIA_TIME_MAX, ComRxInspTmOutsideLimits);
-ValidateAndApplyReceivedValue('E', pstate->value, Settings->target_expiria_time,  SETTINGS_EXPIRIA_TIME_MIN, SETTINGS_EXPIRIA_TIME_MAX, ComRxExpTmOutsideLimits);
+ValidateAndApplyReceivedValue('I', pstate->value, Settings->target_inspiria_time, SETTINGS_INSPIRIA_TIME_MIN, SETTINGS_INSPIRIA_TIME_MAX, ComRxInspTimeOutsideLimits);
+ValidateAndApplyReceivedValue('E', pstate->value, Settings->target_expiria_time,  SETTINGS_EXPIRIA_TIME_MIN, SETTINGS_EXPIRIA_TIME_MAX, ComRxExpTimeOutsideLimits);
 ValidateAndApplyReceivedValue('P', pstate->value, Settings->PEEP,					        SETTINGS_PEEP_MIN, SETTINGS_PEEP_MAX, ComRxPEEPOutsideLimits);
 
 ValidateAndApplyReceivedValue('T', pstate->value, Settings->limit_PeakInspPressure,     SETTINGS_PEAK_PRESSURE_MIN, SETTINGS_PEAK_PRESSURE_MAX, ComRxPeakInspPressureOutsideLimits);
 ValidateAndApplyReceivedValue('t', pstate->value, Settings->limit_InspPressure_min,      SETTINGS_MIN_PRESSURE_MIN, SETTINGS_MIN_PRESSURE_MAX, ComRxMinInspPressureOutsideLimits);
 ValidateAndApplyReceivedValue('S', pstate->value, Settings->target_pressure,      SETTINGS_TARGET_PRESSURE_MIN, SETTINGS_TARGET_PRESSURE_MAX, ComRxTargetPressureOutsideLimits);
 ValidateAndApplyReceivedValue('V', pstate->value, Settings->target_tidal_volume,  SETTINGS_TIDAL_VOLUME_MIN, SETTINGS_TIDAL_VOLUME_MAX, ComRxVolumeOutsideLimits);
+ValidateAndApplyReceivedValue('p', pstate->value, Settings->target_motor_power,  SETTINGS_MOTOR_POWER_MIN, SETTINGS_MOTOR_POWER_MAX, ComRxMotorPowerOutsideLimits);
+ValidateAndApplyReceivedValue('m', pstate->value, Settings->target_motor_speed,  SETTINGS_MOTOR_SPEED_MIN, SETTINGS_MOTOR_SPEED_MAX, ComRxMotorSpeedOutsideLimits);
 
 ValidateAndApplyReceivedValue('G', pstate->value, Settings->trigger_pressure,     SETTINGS_TRIG_PRESSURE_MIN, SETTINGS_TRIG_PRESSURE_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
 ValidateAndApplyReceivedValue('H', pstate->value, Settings->ETS,                  SETTINGS_ETS_MIN, SETTINGS_ETS_MAX, ComRxETS_OutsideLimits);
-ValidateAndApplyReceivedValue('A', pstate->value, Settings->limit_apnea_time_max,   SETTINGS_APNEA_TIME_LIMIT_MIN, SETTINGS_APNEA_TIME_LIMIT_MAX, ComRxETS_OutsideLimits);
-ValidateAndApplyReceivedValue('d', pstate->value, Settings->limit_tidal_volume_min,  SETTINGS_MIN_VT_LIMIT_MIN, SETTINGS_MIN_VT_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
-ValidateAndApplyReceivedValue('D', pstate->value, Settings->limit_tidal_volume_max,  SETTINGS_MAX_VT_LIMIT_MIN, SETTINGS_MAX_VT_LIMIT_MAX, ComRxETS_OutsideLimits);
+ValidateAndApplyReceivedValue('A', pstate->value, Settings->limit_apnea_time_max,   SETTINGS_APNEA_TIME_LIMIT_MIN, SETTINGS_APNEA_TIME_LIMIT_MAX, ComRxApneaTimeLimitMaxOtsideLimits);
+ValidateAndApplyReceivedValue('d', pstate->value, Settings->limit_tidal_volume_min,  SETTINGS_MIN_VT_LIMIT_MIN, SETTINGS_MIN_VT_LIMIT_MAX, ComRxTidalVolumeLimitMinOtsideLimits);
+ValidateAndApplyReceivedValue('D', pstate->value, Settings->limit_tidal_volume_max,  SETTINGS_MAX_VT_LIMIT_MIN, SETTINGS_MAX_VT_LIMIT_MAX, ComRxTidalVolumeLimitMaxOtsideLimits);
 
-ValidateAndApplyReceivedValue('c', pstate->value, Settings->limit_minute_volume_min, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
-ValidateAndApplyReceivedValue('C', pstate->value, Settings->limit_minute_volume_max, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX, ComRxETS_OutsideLimits);
-ValidateAndApplyReceivedValue('b', pstate->value, Settings->limit_breath_rate_min,   SETTINGS_MIN_BREATH_RATE_LIMIT_MIN, SETTINGS_MIN_BREATH_RATE_LIMIT_MAX, ComRxInspiriaTriggerPressureOutsideLimits);
-ValidateAndApplyReceivedValue('B', pstate->value, Settings->limit_breath_rate_max,   SETTINGS_MAX_BREATH_RATE_LIMIT_MIN, SETTINGS_MAX_BREATH_RATE_LIMIT_MAX, ComRxETS_OutsideLimits);
+ValidateAndApplyReceivedValue('c', pstate->value, Settings->limit_minute_volume_min, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MIN_MINUTE_VOLUME_LIMIT_MAX, ComRxMinuteVolumeLimitMinOtsideLimits);
+ValidateAndApplyReceivedValue('C', pstate->value, Settings->limit_minute_volume_max, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MIN, SETTINGS_MAX_MINUTE_VOLUME_LIMIT_MAX, ComRxMinuteVolumeLimitMaxOtsideLimits);
+ValidateAndApplyReceivedValue('b', pstate->value, Settings->limit_breath_rate_min,   SETTINGS_MIN_BREATH_RATE_LIMIT_MIN, SETTINGS_MIN_BREATH_RATE_LIMIT_MAX, ComRxBreathRateLimitMinOutsideLimits);
+ValidateAndApplyReceivedValue('B', pstate->value, Settings->limit_breath_rate_max,   SETTINGS_MAX_BREATH_RATE_LIMIT_MIN, SETTINGS_MAX_BREATH_RATE_LIMIT_MAX, ComRxBreathRateLimitMaxOutsideLimits);
 
 ValidateAndApplyReceivedValue('1', pstate->value/100.0, Settings->PID_Pressure.P_Factor, SETTINGS_PID_P_MIN, SETTINGS_PID_P_MAX, ComRxPIDPOutsideLimits);
 ValidateAndApplyReceivedValue('2', pstate->value/100.0, Settings->PID_Pressure.I_Factor, SETTINGS_PID_I_MIN, SETTINGS_PID_I_MAX, ComRxPIDIOutsideLimits);
