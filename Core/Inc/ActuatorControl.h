@@ -14,9 +14,10 @@
 #include "ErrorHandling.h"
 #include "motor.h"
 #include "PID.h"
+#include "MPC.h"
 #include "Measure.h"
 
 //int32_t FIR(int16_t new_x);
-void ActuatorControl(CtrlParams_t* Control, MeasuredParams_t* Measured, RespSettings_t *Settings, fpidData_t *PIDdata);
+void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlParams_t* Control, ControlData_t *ControlData);
 
 #endif /* ACTUATORCONTROL_H_ */

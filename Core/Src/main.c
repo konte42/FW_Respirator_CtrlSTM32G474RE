@@ -36,6 +36,7 @@
 #include "CommProtocol.h"
 #include "modeSTOP.h"
 #include "modeCMV.h"
+#include "modeCMVmpc.h"
 #include "modePCV.h"
 #include "modePS.h"
 #include "modeHWtest.h"
@@ -73,7 +74,14 @@ void SystemClock_Config(void);
 RespSettings_t  Settings;
 MeasuredParams_t Measured;
 CtrlParams_t Control;
+
 fpidData_t PIDdata;
+mpcData_t MPCdata;
+ControlData_t ControlData =
+{
+	&PIDdata,
+	&MPCdata
+};
 
 int _write(int file, char *ptr, int len)
 {
@@ -116,6 +124,7 @@ int main(void)
 	  memset(&Measured,0,sizeof(MeasuredParams_t));
 	  memset(&Control,0,sizeof(CtrlParams_t));
 	  memset(&PIDdata,0,sizeof(fpidData_t));
+	  memset(&MPCdata,0,sizeof(mpcData_t));
 
 	  //V končni verziji se to prebere iz eeproma,
 	  //da takoj nadaljujemo od koder smo končali,
@@ -164,6 +173,15 @@ int main(void)
     Settings.PID_Volume.maxSumError = SETTINGS_DEFAULT_VOLUME_PID_MAXSUMERR;
     Settings.PID_Volume.maxOut = SETTINGS_DEFAULT_VOLUME_PID_MAXOUT;
     Settings.PID_Volume.minOut = SETTINGS_DEFAULT_VOLUME_PID_MINOUT;
+
+    Settings.MPC_Volume.modelT=SETTINGS_DEFAULT_VOLUME_MPC_modelT;
+	Settings.MPC_Volume.Amat=SETTINGS_DEFAULT_VOLUME_MPC_Amat;
+	Settings.MPC_Volume.Bmat=SETTINGS_DEFAULT_VOLUME_MPC_Bmat;
+	Settings.MPC_Volume.Cmat=SETTINGS_DEFAULT_VOLUME_MPC_Cmat;
+	Settings.MPC_Volume.modelTm=SETTINGS_DEFAULT_VOLUME_MPC_modelTm;
+	Settings.MPC_Volume.Hmpc=SETTINGS_DEFAULT_VOLUME_MPC_Hmpc;
+	Settings.MPC_Volume.maxError=SETTINGS_DEFAULT_VOLUME_MPC_maxError;
+
 
 	  //TODO: read current state of the machine
 	  //Is it possible the get the exact state?
@@ -241,24 +259,29 @@ int main(void)
       {
         case MODE_STOP:
           modeSTOP(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
+          ActuatorControl(&Settings,&Measured,&Control,&ControlData);
           break;
+
         case MODE_CMV:
-          modeCMV(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
+          modeCMVmpc(&Settings, &Measured, &Control);
+          ActuatorControl(&Settings,&Measured,&Control,&ControlData);
           break;
+
         case MODE_PCV:
           modePCV(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
+          ActuatorControl(&Settings,&Measured,&Control,&ControlData);
           break;
+
         case MODE_PS:
           modePS(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
+          ActuatorControl(&Settings,&Measured,&Control,&ControlData);
           break;
+
         case MODE_HW_TEST:
           modeHWtest(&Settings, &Measured, &Control);
-          ActuatorControl(&Control,&Measured,&Settings,&PIDdata);
+          ActuatorControl(&Settings,&Measured,&Control,&ControlData);
           break;
+
         default:
           ReportError(ModeUnknownMode,FSH("Unknown operation mode"));
           Settings.current_mode = MODE_DEFAULT;
@@ -280,7 +303,7 @@ int main(void)
 
 
     //Report Status to the GUI
-//    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
+    //    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
     if (Control.ReportReady & (1<<CTR_REPRDY_INSP))
     {
       Control.ReportReady &= ~(1<<CTR_REPRDY_INSP);
@@ -301,7 +324,7 @@ int main(void)
 
     if (HAL_GetTick()-mark2 >= STATUS_REPORTING_PERIOD)
     {
-      //LED6_Tgl();
+
       ErrQueue_GetErr(&err,&DefaultErrorQueue);
       mark2+=STATUS_REPORTING_PERIOD;
       motorPosition = motor_GetPosition();

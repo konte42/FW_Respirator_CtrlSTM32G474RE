@@ -13,6 +13,7 @@
 #include <stddef.h>
 #define PID_SAMPLING_TIME   TIME_SLICE_MS   //only applies to the INT version of PID.
 #include "PID.h"  //PID_SAMPLING_TIME must be defined before including "PID.h"
+#include "MPC.h"  //PID_SAMPLING_TIME must be defined before including "MPC.h"
 
 #define PROTOTYPE_V2
 //#define PROTOTYPE_V1
@@ -83,6 +84,14 @@
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXSUMERR   20000
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXOUT      100
 #define SETTINGS_DEFAULT_VOLUME_PID_MINOUT      -100
+
+#define SETTINGS_DEFAULT_VOLUME_MPC_modelT		0.5747 //seconds
+#define SETTINGS_DEFAULT_VOLUME_MPC_Amat		0.99826
+#define SETTINGS_DEFAULT_VOLUME_MPC_Bmat		0.000999
+#define SETTINGS_DEFAULT_VOLUME_MPC_Cmat		49.591
+#define SETTINGS_DEFAULT_VOLUME_MPC_modelTm		0.06 //seconds
+#define SETTINGS_DEFAULT_VOLUME_MPC_Hmpc		60
+#define SETTINGS_DEFAULT_VOLUME_MPC_maxError	500
 
 //settings limits
 //#define SETTINGS_RAMPUP_MIN			  0
@@ -174,6 +183,18 @@ typedef struct F_PID_SETTINGS{
   float minOut;
 } fpidSettings_t;
 
+
+//MPC regulator settings
+typedef struct MPC_SETTINGS{
+	float modelT;
+	float Amat;
+	float Bmat;
+	float Cmat;
+	float modelTm;
+	float Hmpc;
+	float maxError;
+}MPCSettings_t;
+
 //Settings
 typedef struct RESPIRATOR_SETTINGS{
 	uint8_t current_mode;
@@ -200,6 +221,7 @@ typedef struct RESPIRATOR_SETTINGS{
 	fpidSettings_t PID_Pressure;
 	fpidSettings_t PID_Flow;
 	fpidSettings_t PID_Volume;
+	MPCSettings_t MPC_Volume;
 } RespSettings_t;
 
 //Measured Parameters
@@ -220,23 +242,28 @@ typedef struct MEASURED_PARAMS{
 
 
 //Control Parameters
-#define CTRL_PAR_MODE_STOP									            0
-#define CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION				  1
-#define CTRL_PAR_MODE_TARGET_POWER							        2
-#define CTRL_PAR_MODE_TARGET_POSITION_INHALE				    3
-#define CTRL_PAR_MODE_TARGET_POSITION						        4
-#define CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET 5
-#define CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE				    6
-#define CTRL_PAR_MODE_REGULATE_PRESSURE_PID_RESET			  7
-#define CTRL_PAR_MODE_REGULATE_PRESSURE						      8
-#define CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME_PID_RESET   9
-#define CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME             10
-#define CTRL_PAR_MODE_REGULATE_VOLUME_PID_RESET         11
-#define CTRL_PAR_MODE_REGULATE_VOLUME                   12
-#define CTRL_PAR_MODE_DUMMY_REGULATE_FLOW_PID_RESET     13
-#define CTRL_PAR_MODE_DUMMY_REGULATE_FLOW               14
-#define CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET				    15
-#define CTRL_PAR_MODE_REGULATE_FLOW							        16
+typedef enum
+{
+	CTRL_PAR_MODE_STOP,
+	CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION,
+	CTRL_PAR_MODE_TARGET_POWER,
+	CTRL_PAR_MODE_TARGET_POSITION_INHALE,
+	CTRL_PAR_MODE_TARGET_POSITION,
+	CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE_PID_RESET,
+	CTRL_PAR_MODE_DUMMY_REGULATE_PRESSURE,
+	CTRL_PAR_MODE_REGULATE_PRESSURE_PID_RESET,
+	CTRL_PAR_MODE_REGULATE_PRESSURE,
+	CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME_PID_RESET,
+	CTRL_PAR_MODE_DUMMY_REGULATE_VOLUME,
+	CTRL_PAR_MODE_REGULATE_VOLUME_PID_RESET,
+	CTRL_PAR_MODE_REGULATE_VOLUME_PID,
+	CTRL_PAR_MODE_DUMMY_REGULATE_FLOW_PID_RESET,
+	CTRL_PAR_MODE_DUMMY_REGULATE_FLOW,
+	CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET,
+	CTRL_PAR_MODE_REGULATE_FLOW_PID,
+	CTRL_PAR_MODE_REGULATE_VOLUME_MPC_RESET,
+	CTRL_PAR_MODE_REGULATE_VOLUME_MPC,
+} Ctrl_Par_Modes_t;
 
 #define CTRL_PAR_MAX_POSITION	100
 #define CTRL_PAR_MIN_POSITION	0
@@ -245,7 +272,7 @@ typedef struct MEASURED_PARAMS{
 #define CTR_REPRDY_EXP   1
 
 typedef struct CONTROL_PARAMS{
-	uint8_t mode;		//regulate power/position/...
+	Ctrl_Par_Modes_t mode;		//regulate power/position/...
 	float target_power;	// max: +-100%
 	float target_position;	// max: +100%, 0 = completely exhaled, theoretically should not go below 0
 	float cur_speed;	// %/ms (calculated from the current an last position)
@@ -260,6 +287,12 @@ typedef struct CONTROL_PARAMS{
   uint8_t Error;  //napake (bitwise)
   uint8_t ReportReady;  //bit0 - insp done, bit1 exp done
 } CtrlParams_t;
+
+
+typedef struct CONTROL_DATA{
+	 fpidData_t *PIDdata;
+	 mpcData_t *MPCdata;
+} ControlData_t;
 
 typedef enum
 {
@@ -276,6 +309,7 @@ typedef enum
   MODE_STATE_INSP_CONST_P,
   MODE_STATE_INSP_CONST_S,
   MODE_STATE_INSP_CONST_F,
+  MODE_STATE_INSP_RAMP_V,
   MODE_STATE_INSP_COMPLETE_ETS_TRIG = 0x40,  //64
   MODE_STATE_INSP_COMPLETE_MAX_VOL,
   MODE_STATE_INSP_COMPLETE_MAX_POS,

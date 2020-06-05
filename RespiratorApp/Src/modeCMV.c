@@ -14,42 +14,42 @@
 
 float FIR(float new_x, int reset, float reset_val);
 
-ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
-int16_t timing;
-uint16_t SETinsp_time;
-uint16_t SETexp_time;
-uint16_t SETpramp_time;
-int16_t PreStartBoostTime;
-float PREP_CURRENT_START = 0;
-float PREP_CURRENT_MAX = 10;
-float PREP_T_TOTAL = 50;
-float PREP_T_START = 10;
-float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
-
-float SET_PEEP;
-float MINvolume;
-float MINpressure;
-float MAXpressure;
-float PressureSafetyMargin = 10;
-
-float TargetVolume = 0;
-float TargetFlow = 0;
-float StartFlow = 0;
-float Pramp_rate = 0;
-float InertiaVolume = 0;
-
-uint16_t Measured_ExpTime=0;
-uint16_t Measured_InspTime=0;
-uint16_t Measured_PrampTime=0;
-uint16_t Measured_PreStartTime=0;
-float MaxMeasuredVolume;
-float sumAirwayPressure;
-float peakExpFlow;
-
 #define MAX_PRAMP_TIME  200
 
 void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t* Control)
 {
+
+	static ModeStates_t dihanje_state = MODE_STATE_FIRST_RUN;
+	static int16_t timing;
+	static uint16_t SETinsp_time;
+	static uint16_t SETexp_time;
+	static uint16_t SETpramp_time;
+	static int16_t PreStartBoostTime;
+	static float PREP_CURRENT_START = 0;
+	static float PREP_CURRENT_MAX = 10;
+	static float PREP_T_TOTAL = 50;
+	static float PREP_T_START = 10;
+	static float PREP_T_RAMP_I = 39;//(49-PREP_T_START);
+
+	static float SET_PEEP;
+	static float MINvolume;
+	static float MINpressure;
+	static float MAXpressure;
+	static float PressureSafetyMargin = 10;
+
+	static float TargetVolume = 0;
+	static float TargetFlow = 0;
+	static float StartFlow = 0;
+	static float Pramp_rate = 0;
+	static float InertiaVolume = 0;
+
+	static uint16_t Measured_ExpTime=0;
+	static uint16_t Measured_InspTime=0;
+	static uint16_t Measured_PrampTime=0;
+	static uint16_t Measured_PreStartTime=0;
+	static float MaxMeasuredVolume;
+	static float sumAirwayPressure;
+	static float peakExpFlow;
 
   Control->status = dihanje_state;  // shrani stanje dihanja
 
@@ -181,7 +181,7 @@ void modeCMV(RespSettings_t* Settings, MeasuredParams_t* Measured, CtrlParams_t*
       timing += TIME_SLICE_MS;
       if (timing >= PREP_T_TOTAL)
       {
-        Control->mode=CTRL_PAR_MODE_REGULATE_FLOW;
+        Control->mode=CTRL_PAR_MODE_REGULATE_FLOW_PID;
         Control->target_flow = FIR(StartFlow,0,0);
         SETexp_time = SETexp_time - PreStartBoostTime;
         Measured_PreStartTime=timing;

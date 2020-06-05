@@ -10,7 +10,6 @@
 #define PID_H_
 
 #include <inttypes.h>
-#include "CommonDefinitions.h"
 #define SCALING_FACTOR  128
 #ifndef PID_SAMPLING_TIME
 #warning "PID Sampling time not set - using default of 1 ms"
