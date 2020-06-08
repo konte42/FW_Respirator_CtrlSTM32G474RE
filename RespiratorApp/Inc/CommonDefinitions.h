@@ -85,13 +85,13 @@
 #define SETTINGS_DEFAULT_VOLUME_PID_MAXOUT      100
 #define SETTINGS_DEFAULT_VOLUME_PID_MINOUT      -100
 
-#define SETTINGS_DEFAULT_VOLUME_MPC_modelT		0.5747 //seconds
-#define SETTINGS_DEFAULT_VOLUME_MPC_Amat		0.99826
+#define SETTINGS_DEFAULT_VOLUME_MPC_modelT		0.5747 //time constant of first order model in seconds
+#define SETTINGS_DEFAULT_VOLUME_MPC_Amat		0.99826	//y = Ax+Bu, y = Cx
 #define SETTINGS_DEFAULT_VOLUME_MPC_Bmat		0.000999
 #define SETTINGS_DEFAULT_VOLUME_MPC_Cmat		49.591
-#define SETTINGS_DEFAULT_VOLUME_MPC_modelTm		0.06 //seconds
-#define SETTINGS_DEFAULT_VOLUME_MPC_Hmpc		60
-#define SETTINGS_DEFAULT_VOLUME_MPC_maxError	500
+#define SETTINGS_DEFAULT_VOLUME_MPC_modelTm		0.160  //dead time in seconds - Smith predictor (nekaj kar smo pogruntali sami, pa nismo vedeli, kaj je to)
+#define SETTINGS_DEFAULT_VOLUME_MPC_Hmpc		60	//horizont predikcije (koliko samplov naprej računaš predikcijo in gledaš pogrešek
+#define SETTINGS_DEFAULT_VOLUME_MPC_maxError	500	//omejitev napake, enako kot pri PID
 
 //settings limits
 //#define SETTINGS_RAMPUP_MIN			  0

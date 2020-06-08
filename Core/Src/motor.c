@@ -83,7 +83,7 @@ void motor_SetPower(float power)	// -100 - 100
 		if (power > 100) power = 100;
 		if (MotorDir!=MOTOR_DIR_VDIH) motor_SetDir(MOTOR_DIR_VDIH);
 		dc = (uint16_t)(power / 100.0 * (MOTOR_MAX_DC-MOTOR_MIN_DC)) + MOTOR_MIN_DC;
-		motor_SetRawDutyCycle(dc);
+		motor_SetPWM(dc);
 	}
 	else if (power < 0)
 	{
@@ -91,16 +91,16 @@ void motor_SetPower(float power)	// -100 - 100
 		if (power > 100) power = 100;
 		if (MotorDir!=MOTOR_DIR_IZDIH) motor_SetDir(MOTOR_DIR_IZDIH);
 		dc = (uint16_t)(power / 100.0 * MOTOR_MAX_DC);
-		motor_SetRawDutyCycle(dc);
+		motor_SetPWM(dc);
 	}
 	else  //if (speed = 0) stop, maintain direction and use appropriate MIN duty cycle
   {
-      if (MotorDir==MOTOR_DIR_VDIH) motor_SetRawDutyCycle(MOTOR_MIN_DC);
-      else motor_SetRawDutyCycle(0);
+      if (MotorDir==MOTOR_DIR_VDIH) motor_SetPWM(MOTOR_MIN_DC);
+      else motor_SetPWM(0);
   }
 }
 
-void motor_SetRawDutyCycle(uint16_t dutyCycle)
+void motor_SetPWM(uint16_t dutyCycle)
 {
 	if (dutyCycle>MOTOR_MAX_DC) dutyCycle = MOTOR_MAX_DC;
 	if ( MotorDir==MOTOR_DIR_VDIH) // ko stiskamo, ne sme DC nikoli pasti na nic, tudi ce pride do konca
@@ -116,27 +116,6 @@ void motor_SetRawDutyCycle(uint16_t dutyCycle)
 		else TIM3->CCR2=0;
 	}
 }
-
-
-void motor_SetDutyCycle(uint16_t dutyCycle)
-{
-	if (dutyCycle>MOTOR_MAX_DC) dutyCycle = MOTOR_MAX_DC;
-	if ( MotorDir==MOTOR_DIR_VDIH) // ko stiskamo, ne sme DC nikoli pasti na nic, tudi ce pride do konca
-	{
-		if (!HAL_GPIO_ReadPin(SWA_GPIO_Port, SWA_Pin))
-		{
-			TIM3->CCR2 = MOTOR_MIN_DC + ((int32_t)dutyCycle*(MOTOR_MAX_DC-MOTOR_MIN_DC))/MOTOR_MAX_DC;
-		}
-		else TIM3->CCR2 = MOTOR_MIN_DC;
-	}
-	else	//izdih
-	{
-		if (!HAL_GPIO_ReadPin(SWB_GPIO_Port, SWB_Pin) ) TIM3->CCR2 = dutyCycle;
-		else TIM3->CCR2=0;
-	}
-}
-
-float motorPosition;
 
 float motor_GetPosition()	//0 - 100 = normal open - normal closed
 {
@@ -156,12 +135,19 @@ float motor_GetCurrent()
 	return raw*0.624179;	// mA
 }
 
-float motor_GetSpeedSetting()	// 0 - 100
+float motor_GetPower()	// 0 - 100
 {
-	float speed;
+	float power=0;
 
-	speed = (float)motor_GetPWM() / MOTOR_MAX_DC * 100.0;
-	return speed;
+	int16_t pwm;
+	pwm = motor_GetPWM();
+
+	if (pwm>=MOTOR_MIN_DC)
+	{
+		power = (float) (pwm-MOTOR_MIN_DC)* 100.0 / (MOTOR_MAX_DC-MOTOR_MIN_DC);
+	}
+
+	return power;
 }
 
 int16_t motor_GetPWM()

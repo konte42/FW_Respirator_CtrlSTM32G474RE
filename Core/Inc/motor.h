@@ -52,8 +52,6 @@
 #define MOTOR_OK 1
 #define MOTOR_ERR 0
 
-extern float motorPosition;
-
 typedef enum
 {
 	MOTOR_DIR_VDIH,
@@ -63,11 +61,10 @@ typedef enum
 
 void motor_Init();
 void motor_SetPower(float power);	//-100 - 100
-void motor_SetDutyCycle(uint16_t dutyCycle);
-void motor_SetRawDutyCycle(uint16_t dutyCycle);
+void motor_SetPWM(uint16_t dutyCycle);
 void motor_SetDir(MotorDir_t direction);
 float motor_GetPosition();	// %
 float motor_GetCurrent();	// mA
 int16_t motor_GetPWM();
-float motor_GetSpeedSetting(); //0 - 100
+float motor_GetPower(); //0 - 100
 #endif /* MOTOR_H_ */

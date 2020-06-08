@@ -20,6 +20,7 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "math.h"
 #include "adc.h"
 #include "usart.h"
 #include "tim.h"
@@ -327,12 +328,11 @@ int main(void)
 
       ErrQueue_GetErr(&err,&DefaultErrorQueue);
       mark2+=STATUS_REPORTING_PERIOD;
-      motorPosition = motor_GetPosition();
 
       length=PrepareStatusMessage(mark1ms,
            (int16_t)(Measured.flow*100.0), (int16_t)(Measured.pressure*100.0),
-           (int16_t)(Measured.volume_t*10.0), (int16_t)motorPosition,
-           (uint16_t)motor_GetCurrent(), motor_GetSpeedSetting(), Control.BreathCounter,
+           (int16_t)(Measured.volume_t*10.0), (int16_t)motor_GetPosition(),
+           (uint16_t)motor_GetCurrent(), (uint16_t) ceil(motor_GetPower()), Control.BreathCounter,
            Control.status, err, Control.target_volume, msg);
       UART0_SendBytes(msg,length);
       UART1_SendBytes(msg,length);
