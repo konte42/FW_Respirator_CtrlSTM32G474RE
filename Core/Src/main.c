@@ -78,6 +78,8 @@ RespSettings_t  Settings;
 MeasuredParams_t Measured;
 CtrlParams_t Control;
 
+int indikator = 0; //uporabljeno za preverjanje delovanja
+
 fpidData_t PIDdata;
 //mpcData_t MPCdata;
 ControlData_t ControlData =
@@ -238,9 +240,7 @@ int main(void)
     HAL_ADC_Start_IT(&hadc4);
     MeasureInit();
     motor_Init();
-    HAL_TIM_PWM_Start(&htim4, TIM_CHANNEL_4);	//BUZZ ON
-    HAL_TIM_PWM_Stop(&htim4, TIM_CHANNEL_4);	//BUZZ OFF
-    //BUZZ_Off();
+    BUZZ_Off();
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -263,6 +263,19 @@ int main(void)
         MeasureFlow(&Measured);
         MeasurePressure(&Measured);
         MeasureVolume(&Measured);
+
+        // preverja delovanje s priziganjem pina za led na tipki, zakomentiranj kasneje
+        indikator++;
+        if(indikator == 1000)
+        {
+        	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_SET);
+        }
+        else if(indikator==2000)
+        {
+        	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
+        	indikator=0;
+        }
+
 
         //TODO: mode state machines must return HW independent control values
         switch (Settings.current_mode)

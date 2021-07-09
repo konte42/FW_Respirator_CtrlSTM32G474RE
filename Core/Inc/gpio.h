@@ -66,13 +66,13 @@ extern "C" {
 #define LED7_Off()	{}
 #define LED7_Tgl()	{}
 
-#define BUZZ_On()  dummy()
-#define BUZZ_Off()  dummy()
 #define BUZZ_Tgl()  dummy()
 
 #warning "Koncna stikala se ne delujejo!!!"
 #define is_SWA() (1)
 #define is_SWB() (1)
+
+
 
 /* USER CODE END Private defines */
 

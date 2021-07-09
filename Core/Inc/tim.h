@@ -45,6 +45,9 @@ void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
 /* USER CODE BEGIN Prototypes */
 
+void BUZZ_On(void);
+void BUZZ_Off(void);
+
 /* USER CODE END Prototypes */
 
 #ifdef __cplusplus

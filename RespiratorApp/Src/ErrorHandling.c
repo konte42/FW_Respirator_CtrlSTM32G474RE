@@ -135,7 +135,7 @@ void ErrorBuzzer()
   {
     if (buzzerState == 1) //Warning beep once a second
     {
-      if ((HAL_GetTick() % 1000) < 200) BUZZ_On();
+      if ((HAL_GetTick() % 1000) < 200) {BUZZ_On();}
       else BUZZ_Off();
     }
     else if (buzzerState > 1)
