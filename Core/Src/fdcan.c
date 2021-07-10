@@ -19,12 +19,13 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
+#include "XCP.h"
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
-FDCAN_HandleTypeDef hfdcan2;
+
 
 /* FDCAN2 init function */
 void MX_FDCAN2_Init(void)
@@ -59,6 +60,32 @@ void MX_FDCAN2_Init(void)
     Error_Handler();
   }
   /* USER CODE BEGIN FDCAN2_Init 2 */
+  hfdcan2_filter.IdType = FDCAN_STANDARD_ID;
+  hfdcan2_filter.FilterIndex = 0;
+  hfdcan2_filter.FilterType = FDCAN_FILTER_MASK;
+  hfdcan2_filter.FilterConfig = FDCAN_FILTER_TO_RXFIFO0;
+  hfdcan2_filter.FilterID1 = 0x63D;
+  hfdcan2_filter.FilterID2 = 0x7FF;
+  if (HAL_FDCAN_ConfigFilter(&hfdcan2, &hfdcan2_filter) != HAL_OK)
+  {
+	Error_Handler();
+  }
+
+
+  hfdcan2_TxHeader.Identifier = MASTER_ID;
+  hfdcan2_TxHeader.IdType = FDCAN_STANDARD_ID;
+  hfdcan2_TxHeader.TxFrameType = FDCAN_DATA_FRAME;
+  hfdcan2_TxHeader.DataLength = FDCAN_DLC_BYTES_8;
+  //hfdcan2_TxHeader.ErrorStateIndicator
+  hfdcan2_TxHeader.BitRateSwitch = FDCAN_BRS_OFF;
+  hfdcan2_TxHeader.FDFormat = FDCAN_CLASSIC_CAN;
+  hfdcan2_TxHeader.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
+  hfdcan2_TxHeader.MessageMarker = 0;
+
+  if(HAL_FDCAN_Start(&hfdcan2) != HAL_OK)
+  {
+	Error_Handler();
+  }
 
   /* USER CODE END FDCAN2_Init 2 */
 

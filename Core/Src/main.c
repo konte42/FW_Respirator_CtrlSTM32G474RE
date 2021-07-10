@@ -265,16 +265,24 @@ int main(void)
         MeasureVolume(&Measured);
 
         // preverja delovanje s priziganjem pina za led na tipki, zakomentiranj kasneje
+        uint8_t fdcanTxData[8];
+        fdcanTxData[0] = 0xFF;
+        fdcanTxData[3] = 0x42;
+
         indikator++;
+
         if(indikator == 1000)
         {
         	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_SET);
+        	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, &fdcanTxData);
         }
         else if(indikator==2000)
         {
         	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
         	indikator=0;
         }
+
+
 
 
         //TODO: mode state machines must return HW independent control values

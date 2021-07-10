@@ -40,6 +40,9 @@ extern FDCAN_HandleTypeDef hfdcan2;
 void MX_FDCAN2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+FDCAN_HandleTypeDef hfdcan2;
+FDCAN_FilterTypeDef hfdcan2_filter;
+FDCAN_TxHeaderTypeDef hfdcan2_TxHeader;
 
 /* USER CODE END Prototypes */
 
