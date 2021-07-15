@@ -61,6 +61,11 @@ void motor_Init()
   HAL_TIM_Base_Start(&htim3);
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
  #endif
+
+  if(CAN_XCP_INIT() != HAL_OK)
+  {
+	  Error_Handler();
+  }
 }
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
@@ -106,13 +111,13 @@ void motor_SetPower(float power)	// -100 - 100
       else motor_SetPWM(0);
 	}
 	*/
-	float trq;
 	trq = MOTOR_MAX_TORQUE * (power/100);
 
-	if(state == 0 )
+	if(fdcan_state == FDCAN_FREE)
 	{
-
+		write_trq();
 	}
+	else return;
 }
 
 void motor_SetPWM(uint16_t dutyCycle)

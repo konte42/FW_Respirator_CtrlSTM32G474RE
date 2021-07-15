@@ -179,30 +179,19 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
     SenderID = hfdcan2_RxHeader.Identifier;
     dolzinaDLC = hfdcan2_RxHeader.DataLength;
 //////naredi prek dolzine prejetega sporocila, vec kot FF je sporocilo?
-    if (SenderID == SLAVE_ID) {
-
-        if(fdcanRxData[0] == XCP_PID_RES){
+    if (SenderID == SLAVE_ID)
+    {
+        if(fdcanRxData[0] == XCP_PID_RES)
+        {
             //all good for FF, not for actual values
-            if(dolzinaDLC == 1) {
+            if(dolzinaDLC == 1)
+            {
                 //samo prejme potrditev
             }
-            if(state == 1) {
-                //reads angle
-                unsigned inLength = sizeof(angle);
-                signed long byte_counter = inLength - 1;
-
-                char *inBuffer = (char *)&angle;
-
-                for(unsigned int i = 0; i < inLength; i++) {
-                    inBuffer[byte_counter] = RxData[ i+1 ];
-                    byte_counter--;
-                }
-                // calculate trq from PID
-                PID_trq();
-            }
-            else if(state == 2) {
+            if(fdcan_state == FDCAN_FIRST_MSG_RESPONSE)
+            {
                 //send trq command
-                signed long byte_counter = sizeof(trq) - 1;
+            	signed long byte_counter = sizeof(trq) - 1;
                 unsigned char message2[8] = {0};
                 memset(&message2, 0, sizeof(message2));
 
@@ -211,45 +200,38 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
                 if((byte_counter + 1) > 6)   message2[1] = 6;
                 else                         message2[1] = byte_counter + 1;
 
-                for(int i=0; i < message2[1];i++) {
+                for(int i=0; i < message2[1];i++)
+                {
                     char *outBuffer = (char * )&trq;
                     message2[i+2] = outBuffer[byte_counter];
                     byte_counter--;
                 }
 
+
                 uint8_t * msg_send2 = message2;
-                static uint32_t TxMailbox2;        //just a location in which TxMailbox is stored
-                if(HAL_CAN_GetTxMailboxesFreeLevel(hcan)) {
-                    // We can only send if a free TX mailbox is available
-                    // Otherwise drop the current cycle data
-                    if (HAL_CAN_AddTxMessage(hcan, &TxHeader, msg_send2, &TxMailbox2) != HAL_OK) {
-                        /* Transmission request Error */
-                        Error_Handler();
-                    }
+                if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send2) != HAL_OK)
+                {
+                    /* Transmission request Error */
+                    Error_Handler();
                 }
-                state = 3;
             }
-            else if(state == 3) {
-                //any final reception ok, default state after any send
-                state = 0;
-                read_angle();
-            }
-            else if(state == 4) {
-                //any final reception ok
-                //state = 0;
-                //end PID if called at any time
-            }
+            fdcan_state = FDCAN_SECOND_MSG_RESPONSE;
         }
-        else if(RxData[0] == XCP_PID_ERR) {
-            //error
-            trq = 0;
-            state = 99;
-            CAN_XCP_write(RequestedTorque, inExtension0, sizeof(trq), (char *)&trq); //request without interrupts safety I guess??
+        else if(fdcan_state == FDCAN_SECOND_MSG_RESPONSE) {
+            //any final reception ok, default state after any send
+            fdcan_state = FDCAN_FREE;
         }
-        else
-        //not good, error?
+    }
+    else if(fdcanRxData[0] == XCP_PID_ERR) {
+        //error
         trq = 0;
-        state = 42;
+        fdcan_state = FDCAN_ERROR_WHEN_TRANSMITTING;
+        CAN_XCP_write(RequestedTorque, inExtension0, sizeof(trq), (char *)&trq); //request without interrupts safety I guess??
+    }
+    else {
+    //not good, error?
+    	trq = 0;
+    	fdcan_state = FDCAN_UNKNOWN_ERROR;
         CAN_XCP_write(RequestedTorque, inExtension0, sizeof(trq), (char *)&trq); //request without interrupts safety I guess??
 
     }
@@ -257,32 +239,26 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
 
 void CAN_XCP_connect() {        //XCP connect message, probably 0xFF00 is enough
 
-      unsigned char message[2] = {0};
+	unsigned char message[2] = {0};
 
-      memset(&message, 0, sizeof(message));
-      message[0] = XCP_PID_CMD_CONNECT;     //0xFF
-      message[1] = 0x00;                    //XCP normal mode
+    memset(&message, 0, sizeof(message));
+    message[0] = XCP_PID_CMD_CONNECT;     //0xFF
+    message[1] = 0x00;                    //XCP normal mode
 
-      uint8_t * msg_send = message;
+    uint8_t * msg_send = message;
 
-      hfdcan2_TxHeader.DataLength = sizeof(message);
-      static uint32_t TxMailbox;        //just a location in which TxMailbox is stored
+    hfdcan2_TxHeader.DataLength = sizeof(message);
 
-      if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan)) {
-        // We can only send if a free TX mailbox is available
-        // Otherwise drop the current cycle data
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+    {
+        /* Transmission request Error */
+        Error_Handler();
+    }
 
-        if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, msg_send, &TxMailbox) != HAL_OK)
-        {
-          /* Transmission request Error */
-          Error_Handler();
-        }
-      }
-
-#warning "mogoce potrebno spremeniti"
-      while (CAN_XCP_response() != XCP_PID_RES) {
-          HAL_Delay(5);
-      }
+	#warning "mogoce potrebno spremeniti"
+    while (CAN_XCP_response() != XCP_PID_RES) {
+        HAL_Delay(5);
+    }
 }
 
 void write_trq(void) {
@@ -302,154 +278,77 @@ void write_trq(void) {
 
     hfdcan2_TxHeader.DataLength = sizeof(message);
     //static can_fesp_t TxData;         //8 byte data in union to be send
-    static uint32_t TxMailbox;        //just a location in which TxMailbox is stored
 
-    if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan)) {
-        // We can only send if a free TX mailbox is available
-        // Otherwise drop the current cycle data
-
-        if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, msg_send, &TxMailbox) != HAL_OK) {
-          /* Transmission request Error */
-          Error_Handler();
-        }
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK) {
+        /* Transmission request Error */
+        Error_Handler();
     }
-    state = 2;
+
+    fdcan_state = FDCAN_SECOND_MSG_RESPONSE;
 
 }
+
+
 
 void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer) {        //XCP write msg, address, extension 0 or 1, length? buffer?
 
-      unsigned char message[8] = {0};
-      signed long byte_counter = inLength - 1;
-      //unsigned long byte_counter_old = 0;
-
-      memset(&message, 0, sizeof(message));
-      message[0] = XCP_PID_CMD_SET_MTA;
-      message[3] = inExtension;
-      message[4] = (unsigned char)(inAddress >> 24);
-      message[5] = (unsigned char)(inAddress >> 16);
-      message[6] = (unsigned char)(inAddress >> 8);
-      message[7] = (unsigned char)(inAddress >> 0);
-
-      uint8_t * msg_send = message;     //to reši vse nadaljne zadeve
-
-      hfdcan2_TxHeader.DataLength = sizeof(message);
-      //static can_fesp_t TxData;         //8 byte data in union to be send
-      static uint32_t TxMailbox;        //just a location in which TxMailbox is stored
-
-      if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan)) {
-        // We can only send if a free TX mailbox is available
-        // Otherwise drop the current cycle data
-
-        if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, msg_send, &TxMailbox) != HAL_OK)
-        {
-          /* Transmission request Error */
-          Error_Handler();
-        }
-      }
-
-#warning "tudi mogoce potrebno spremeniti"
-      while (CAN_XCP_response() != XCP_PID_RES) {
-          HAL_Delay(2);
-      }
-
-      //now the response was positive and we can send actual data we want
-      unsigned char message2[8] = {0};
-      memset(&message2, 0, sizeof(message2));
-
-            message2[0] = XCP_PID_CMD_DOWNLOAD;
-
-            if((byte_counter + 1) > 6)   message2[1] = 6;
-            else                         message2[1] = byte_counter + 1;
-
-            for(int i=0; i < message2[1];i++) {
-                 message2[i+2] = outBuffer[byte_counter];
-                 byte_counter--;
-            }
-
-            uint8_t * msg_send2 = message2;
-            static uint32_t TxMailbox2;        //just a location in which TxMailbox is stored
-            if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan)) {
-              // We can only send if a free TX mailbox is available
-              // Otherwise drop the current cycle data
-              if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, msg_send2, &TxMailbox2) != HAL_OK)
-              {
-                /* Transmission request Error */
-                Error_Handler();
-              }
-            }
-
-            while (CAN_XCP_response() != XCP_PID_RES) {
-                //HAL_Delay(10);
-            }
-
-}
-
-void CAN_XCP_read(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *inBuffer) {
-
-    unsigned char message[8] = {0};
+	unsigned char message[8] = {0};
     signed long byte_counter = inLength - 1;
+    //unsigned long byte_counter_old = 0;
 
-          memset(&message, 0, sizeof(message));
-          message[0] = XCP_PID_CMD_SHORT_UPLOAD;
-          message[1] = inLength;
-          message[3] = inExtension;
-          message[4] = (unsigned char)(inAddress >> 24);
-          message[5] = (unsigned char)(inAddress >> 16);
-          message[6] = (unsigned char)(inAddress >> 8);
-          message[7] = (unsigned char)(inAddress >> 0);
+    memset(&message, 0, sizeof(message));
+    message[0] = XCP_PID_CMD_SET_MTA;
+    message[3] = inExtension;
+    message[4] = (unsigned char)(inAddress >> 24);
+    message[5] = (unsigned char)(inAddress >> 16);
+    message[6] = (unsigned char)(inAddress >> 8);
+    message[7] = (unsigned char)(inAddress >> 0);
 
-          uint8_t * msg_send = message;
+    uint8_t * msg_send = message;     //to reši vse nadaljne zadeve
 
-          TxHeader.DLC = sizeof(message);
-          static uint32_t TxMailbox;
+    hfdcan2_TxHeader.DataLength = sizeof(message);
+    //static can_fesp_t TxData;         //8 byte data in union to be send
 
-          if(HAL_CAN_GetTxMailboxesFreeLevel(&hcan)) {
-            // We can only send if a free TX mailbox is available
-            // Otherwise drop the current cycle data
-
-            if (HAL_CAN_AddTxMessage(&hcan, &TxHeader, msg_send, &TxMailbox) != HAL_OK)
-            {
-              /* Transmission request Error */
-              Error_Handler();
-            }
-          }
-          //HAL_Delay(5);
-    //read response
-          uint16_t SenderID = 0x63D;
-    while(SenderID != SLAVE_ID) {
-          while(HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) == 0) {
-                  //idk wait?
-                  //HAL_Delay(2);
-              }
-              if(HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-                  {
-                      /* Reception Error */
-                      Error_Handler();
-                  }
-
-             SenderID = RxHeader.StdId;
-
-             //if (SenderID == SLAVE_ID) {
-                 //break;
-                 /*
-                 if(RxData[0] == XCP_PID_RES){
-                     //all good for FF, not for actual values
-                     break;
-                 }
-                 */
-                 //else if(RxData[0] == XCP_PID_ERR) {
-                     //error
-                     //idk break;?
-                 //}
-             //}
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+    {
+      /* Transmission request Error */
+      Error_Handler();
     }
 
-    for(unsigned int i = 0; i < inLength; i++) {
-        inBuffer[byte_counter] = RxData[ i+1 ];
+	#warning "tudi mogoce potrebno spremeniti"
+    while (CAN_XCP_response() != XCP_PID_RES) {
+        HAL_Delay(2);
+    }
+
+
+
+      //now the response was positive and we can send actual data we want
+
+    unsigned char message2[8] = {0};
+    memset(&message2, 0, sizeof(message2));
+
+    message2[0] = XCP_PID_CMD_DOWNLOAD;
+
+    if((byte_counter + 1) > 6)   message2[1] = 6;
+    else                         message2[1] = byte_counter + 1;
+
+    for(int i=0; i < message2[1];i++)
+    {
+    	message2[i+2] = outBuffer[byte_counter];
         byte_counter--;
     }
 
+    uint8_t * msg_send2 = message2;
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send2) != HAL_OK)
+    {
+    	/* Transmission request Error */
+        Error_Handler();
+    }
+
+    while (CAN_XCP_response() != XCP_PID_RES)
+    {
+    	//HAL_Delay(10);
+    }
 }
 
 
@@ -468,30 +367,32 @@ char CAN_XCP_INIT() {
 int CAN_XCP_response() {    //done by interrupt, from now on used for init only
     ////get response
         ///rework this return thingie
-    while(HAL_CAN_GetRxFifoFillLevel(&hcan, CAN_RX_FIFO0) == 0) {
+    while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0) {}
 
+    uint8_t * message = fdcanRxData;
+    if(HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &hfdcan2_RxHeader, message) != HAL_OK)
+    {
+        /* Reception Error */
+        Error_Handler();
     }
-        if(HAL_CAN_GetRxMessage(&hcan, CAN_RX_FIFO0, &RxHeader, RxData) != HAL_OK)
-            {
-                /* Reception Error */
-                Error_Handler();
-            }
 
-       uint16_t SenderID = RxHeader.StdId;
+    uint16_t SenderID = hfdcan2_RxHeader.Identifier;
 
-       if (SenderID == SLAVE_ID) {
-           if(RxData[0] == XCP_PID_RES){
-               //all good for FF, not for actual values
-               return RxData[0];
-           }
-           else if(RxData[0] == XCP_PID_ERR) {
-               //error
-               return RxData[0];
-           }
-           else
-               //not good
-               return RxData[0];
+    if (SenderID == SLAVE_ID) {
+    	if(fdcanRxData[0] == XCP_PID_RES){
+           //all good for FF, not for actual values
+           return fdcanRxData[0];
        }
+       else if(fdcanRxData[0] == XCP_PID_ERR)
+       {
+           //error
+           return fdcanRxData[0];
+       }
+       else
+
+           //not good
+           return fdcanRxData[0];
+     }
      return 0;
 }
 /* USER CODE END 1 */
