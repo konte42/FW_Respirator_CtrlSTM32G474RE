@@ -49,9 +49,9 @@ extern ADC_HandleTypeDef hadc4;
 #define ADC_CH_FLOW_N		(ADC_STARTCHAN+4)
 #else
 #define ADC_CH_FLOW				    0	//Channel numbers are critical for setting up DMA
-#define ADC_CH_PRESSURE			  2
-#define ADC_CH_MOTOR_CURRENT	3
-#define ADC_CH_POSITION			  4
+#define ADC_CH_PRESSURE			  	2
+#define ADC_CH_MOTOR_CURRENT		3
+#define ADC_CH_POSITION				4
 #define ADC_CH_FLOW_N		    	1
 #endif
 

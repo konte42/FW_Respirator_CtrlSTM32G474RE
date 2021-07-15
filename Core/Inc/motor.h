@@ -10,6 +10,7 @@
 #define MOTOR_H_
 
 #include "main.h"
+
 #include "CommonDefinitions.h"
 // ******************************
 // Uporabniske nastavitve

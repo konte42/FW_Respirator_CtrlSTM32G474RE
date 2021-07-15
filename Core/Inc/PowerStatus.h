@@ -25,5 +25,6 @@ typedef enum
 } PowerStatus_t;
 
 PowerStatus_t DetectPowerStatus();
+void TurnOff();
 
 #endif /* INC_POWERSTATUS_H_ */

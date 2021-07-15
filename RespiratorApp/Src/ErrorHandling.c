@@ -7,6 +7,7 @@
 #include <string.h>
 #include "ErrorHandling.h"
 #include "gpio.h"
+#include "tim.h"
 
 //Figure out where it would make sense to put ErrorReporter and put one there
 #include "main.h"
@@ -135,7 +136,7 @@ void ErrorBuzzer()
   {
     if (buzzerState == 1) //Warning beep once a second
     {
-      if ((HAL_GetTick() % 1000) < 200) {BUZZ_On();}
+      if ((HAL_GetTick() % 1000) < 200) BUZZ_On();
       else BUZZ_Off();
     }
     else if (buzzerState > 1)

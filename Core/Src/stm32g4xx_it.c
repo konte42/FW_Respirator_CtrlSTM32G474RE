@@ -25,6 +25,7 @@
 /* USER CODE BEGIN Includes */
 #include "usart.h"
 #include "gpio.h"
+#include "fdcan.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

@@ -51,28 +51,21 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
   {
 	  ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
   }
-#elif defined(PROTOTYPE_V2)
-  if (hadc->Instance == ADC1)
+#elif defined(PROTOTYPE_V2)  //pravzaprav PROTOTYPE_V3
+  if (hadc->Instance == ADC2)
+  {
+    ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
+  }
+  else if (hadc->Instance == ADC4)
   {
     if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
     else ADCstage=1;
     if (ADCstage == 1) ADC_results[ADC_CH_FLOW] = hadc->Instance->DR;
-    else      ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
-  }
-  else if (hadc->Instance == ADC2)
-  {
-    if( __HAL_ADC_GET_FLAG(hadc, ADC_FLAG_EOS)) ADCstage=2;
-    else ADCstage=1;
-    if (ADCstage == 1) ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
     else
     {
-      ADC_results[ADC_CH_MOTOR_CURRENT] = hadc->Instance->DR;
+      ADC_results[ADC_CH_PRESSURE] = hadc->Instance->DR;
       ADC_complete=1;
     }
-  }
-  else if (hadc->Instance == ADC3)
-  {
-    //ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;
   }
 #else
 #error Prototype version not defined.

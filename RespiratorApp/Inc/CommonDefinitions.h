@@ -265,6 +265,7 @@ typedef enum
 	CTRL_PAR_MODE_REGULATE_VOLUME_MPC,
 } Ctrl_Par_Modes_t;
 
+
 #define CTRL_PAR_MAX_POSITION	100
 #define CTRL_PAR_MIN_POSITION	0
 

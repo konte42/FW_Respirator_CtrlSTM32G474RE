@@ -27,7 +27,7 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
 			break;
 
 		case CTRL_PAR_MODE_HOLD_MAX_CLOSED_POSITION:
-      motor_SetPower(0.01);  //turn motor direction to close (inhale) and
+			motor_SetPower(0.01);  //turn motor direction to close (inhale) and
 			break;                 //maintain minimum duty cycle to hold clamps together
 
 // POWER CONTROL MODE ///////////////////////////////////////////////////////////
@@ -42,7 +42,8 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
 			{
 				if (Control->cur_position > CTRL_PAR_MIN_POSITION)	//Obey if within limits
 				  { motor_SetPower(Control->target_power);}
-        else {  motor_SetPower(0); }  //Stop if too far
+				else
+				  { motor_SetPower(0); }  //Stop if too far
 			}
 			break;
 

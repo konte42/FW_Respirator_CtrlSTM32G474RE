@@ -115,12 +115,12 @@ int main(void)
 	#ifdef AVR
 	  uint32_t mark1=0;
 	#endif
-    uint32_t mark2=0;
-    uint32_t mark1ms=0;
+	  uint32_t mark2=0;
+	  uint32_t mark1ms=0;
 	  uint8_t newSettingsReceived;
 	  ErrCodes_t err;
-    ProcMsgState_t PMSuart0 = {0};
-    ProcMsgState_t PMSuart1 = {0};
+	  ProcMsgState_t PMSuart0 = {0};
+	  ProcMsgState_t PMSuart1 = {0};
 
 	  /*
 	  RespSettings_t	Settings;
@@ -264,7 +264,10 @@ int main(void)
         MeasurePressure(&Measured);
         MeasureVolume(&Measured);
 
+        TurnOff();
+
         // preverja delovanje s priziganjem pina za led na tipki, zakomentiranj kasneje
+        /*
         uint8_t fdcanTxData[8];
         fdcanTxData[0] = 0xFF;
         fdcanTxData[3] = 0x42;
@@ -281,7 +284,7 @@ int main(void)
         	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
         	indikator=0;
         }
-
+		*/
 
 
 

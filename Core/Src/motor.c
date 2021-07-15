@@ -7,9 +7,11 @@
 #include "motor.h"
 #include "adc.h"
 #include "gpio.h"
+#include "fdcan.h"
 
 extern TIM_HandleTypeDef htim3;
 MotorDir_t MotorDir;
+uint8_t state;
 
 void motor_Init()
 {
@@ -63,7 +65,7 @@ void motor_Init()
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-#warning "manjka implementacija IRQ za detekcijo koncnih stikal motorja"
+#warning "manjka implementacija IRQ za detekcijo koncnih stikal motorja. S tem motorjem ne moremo doseci zelenega v tej funkciji, ker potrebujemo cca 10 ms za prenos ukaza motorju"
 	/*
 	switch(GPIO_Pin)
 	{
@@ -80,6 +82,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 void motor_SetPower(float power)	// -100 - 100
 {
+	/*
 	uint16_t dc;
 
 	if (power > 0)
@@ -98,10 +101,18 @@ void motor_SetPower(float power)	// -100 - 100
 		motor_SetPWM(dc);
 	}
 	else  //if (speed = 0) stop, maintain direction and use appropriate MIN duty cycle
-  {
+	{
       if (MotorDir==MOTOR_DIR_VDIH) motor_SetPWM(MOTOR_MIN_DC);
       else motor_SetPWM(0);
-  }
+	}
+	*/
+	float trq;
+	trq = MOTOR_MAX_TORQUE * (power/100);
+
+	if(state == 0 )
+	{
+
+	}
 }
 
 void motor_SetPWM(uint16_t dutyCycle)
@@ -135,6 +146,7 @@ float motor_GetPosition()	//0 - 100 = normal open - normal closed
 
 float motor_GetCurrent()
 {
+	#warning "Toka ne moremo brati v verziji 3"
 	float raw=*(ADC_results_p()+ADC_CH_MOTOR_CURRENT);
 	return raw*0.624179;	// mA
 }
@@ -156,9 +168,11 @@ float motor_GetPower()	// 0 - 100
 
 int16_t motor_GetPWM()
 {
+	/*
 	if (TIM3->CCR2==0) return 0;
 	if (MotorDir == MOTOR_DIR_VDIH) return TIM3->CCR2;
 	else return -TIM3->CCR2;
+	*/
 }
 
 void motor_SetDir(MotorDir_t direction)

@@ -68,9 +68,9 @@ extern "C" {
 
 #define BUZZ_Tgl()  dummy()
 
-#warning "Koncna stikala se ne delujejo!!!"
-#define is_SWA() (1)
-#define is_SWB() (1)
+//#warning "Koncna stikala se ne delujejo!!!"
+#define is_SWA() HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)
+#define is_SWB() HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)
 
 
 
