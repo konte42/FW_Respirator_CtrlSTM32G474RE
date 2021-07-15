@@ -111,7 +111,11 @@ void motor_SetPower(float power)	// -100 - 100
       else motor_SetPWM(0);
 	}
 	*/
-	trq = MOTOR_MAX_TORQUE * (power/100);
+
+
+	if(HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)) {trq = MOTOR_MIN_TORQUE;}
+	else if(HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)) {trq = 0;}
+	else trq = MOTOR_MAX_TORQUE * (power/100);
 
 	if(fdcan_state == FDCAN_FREE)
 	{

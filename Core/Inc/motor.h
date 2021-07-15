@@ -43,6 +43,10 @@
 #define MOTOR_POS_OPEN	0		// pos: \ /
 #define MOTOR_POS_CLOSED	(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED) // pos: ||
 
+#warning "definiraj maksimalni in minimalni navor, 0.7 in 0.01 so simbolicne"
+#define MOTOR_MAX_TORQUE	0.7
+#define MOTOR_MIN_TORQUE	0.01	//minimalni potrebni navor, da bo držal balon stisnjen
+
 // maksimalna vredfnost registra za dutycylce
 #define MOTOR_MAX_DC	1023
 #define MOTOR_MIN_DC	150

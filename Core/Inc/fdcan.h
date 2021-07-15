@@ -34,9 +34,6 @@ extern "C" {
 extern FDCAN_HandleTypeDef hfdcan2;
 
 /* USER CODE BEGIN Private defines */
-#warning "definiraj maksimalni in minimalni navor"
-#define MOTOR_MAX_TORQUE	0.01
-#define MOTOR_MIN_TORQUE	0.7
 
 FDCAN_HandleTypeDef hfdcan2;
 FDCAN_FilterTypeDef hfdcan2_filter;
