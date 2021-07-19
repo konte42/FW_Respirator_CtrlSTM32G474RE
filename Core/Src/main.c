@@ -42,7 +42,7 @@
 #include "modePCV.h"
 #include "modePS.h"
 #include "modeHWtest.h"
-
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

@@ -43,13 +43,10 @@
 #define MOTOR_POS_OPEN	0		// pos: \ /
 #define MOTOR_POS_CLOSED	(MOTOR_POS_RAW_OPEN - MOTOR_POS_RAW_CLOSED) // pos: ||
 
-#warning "definiraj maksimalni in minimalni navor, 0.7 in 0.01 so simbolicne"
+// TODO: "definiraj maksimalni in minimalni navor, 0.7 in 0.01 so simbolicne"
 #define MOTOR_MAX_TORQUE	0.7
 #define MOTOR_MIN_TORQUE	0.01	//minimalni potrebni navor, da bo držal balon stisnjen
 
-// maksimalna vredfnost registra za dutycylce
-#define MOTOR_MAX_DC	1023
-#define MOTOR_MIN_DC	150
 // ******************************
 // Konec Uporabniskih nastavitev
 // ******************************
@@ -57,19 +54,9 @@
 #define MOTOR_OK 1
 #define MOTOR_ERR 0
 
-typedef enum
-{
-	MOTOR_DIR_VDIH,
-	MOTOR_DIR_IZDIH,
-	MOTOR_DIR_UNDEFINED
-}MotorDir_t;
-
 void motor_Init();
 void motor_SetPower(float power);	//-100 - 100
-void motor_SetPWM(uint16_t dutyCycle);
-void motor_SetDir(MotorDir_t direction);
 float motor_GetPosition();	// %
 float motor_GetCurrent();	// mA
-int16_t motor_GetPWM();
 float motor_GetPower(); //0 - 100
 #endif /* MOTOR_H_ */

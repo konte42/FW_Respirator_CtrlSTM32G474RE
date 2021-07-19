@@ -48,6 +48,7 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
 			break;
 
 // POSITION REGULATION MODES ///////////////////////////////////////////////////////////
+		//not used
 		case CTRL_PAR_MODE_TARGET_POSITION_INHALE:
 			if (Control->target_position - Control->cur_position >= 0)
 			{
@@ -242,7 +243,7 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
       break;
 
 ////////////////// normal flow regulation mode /////////////////////////
-		case CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET:
+	case CTRL_PAR_MODE_REGULATE_FLOW_PID_RESET:
       PID_fInit(Settings->PID_Flow.P_Factor,
                 Settings->PID_Flow.I_Factor,
                 Settings->PID_Flow.D_Factor,

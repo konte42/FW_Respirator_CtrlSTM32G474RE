@@ -175,7 +175,7 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
 	}
 
     uint16_t SenderID;
-    uint32_t dolzinaDLC;
+    uint16_t dolzinaDLC;
     SenderID = hfdcan2_RxHeader.Identifier;
     dolzinaDLC = hfdcan2_RxHeader.DataLength;
 //////naredi prek dolzine prejetega sporocila, vec kot FF je sporocilo?
@@ -191,7 +191,7 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
             if(fdcan_state == FDCAN_FIRST_MSG_RESPONSE)
             {
                 //send trq command
-            	signed long byte_counter = sizeof(trq) - 1;
+            	int byte_counter = sizeof(trq) - 1;
                 unsigned char message2[8] = {0};
                 memset(&message2, 0, sizeof(message2));
 
@@ -221,15 +221,20 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
             //any final reception ok, default state after any send
             fdcan_state = FDCAN_FREE;
         }
+        else return;
     }
-    else if(fdcanRxData[0] == XCP_PID_ERR) {
+
+    // TODO: do something else with these two errors
+    else if(fdcanRxData[0] == XCP_PID_ERR)
+    {
         //error
         trq = 0;
         fdcan_state = FDCAN_ERROR_WHEN_TRANSMITTING;
         CAN_XCP_write(RequestedTorque, inExtension0, sizeof(trq), (char *)&trq); //request without interrupts safety I guess??
     }
-    else {
-    //not good, error?
+    else
+    {
+    	//not good, error?
     	trq = 0;
     	fdcan_state = FDCAN_UNKNOWN_ERROR;
         CAN_XCP_write(RequestedTorque, inExtension0, sizeof(trq), (char *)&trq); //request without interrupts safety I guess??
@@ -237,31 +242,9 @@ void HAL_FDCAN_RxFifo0Callback (FDCAN_HandleTypeDef * hfdcan, uint32_t RxFifo0IT
     }
 }
 
-void CAN_XCP_connect() {        //XCP connect message, probably 0xFF00 is enough
 
-	unsigned char message[2] = {0};
-
-    memset(&message, 0, sizeof(message));
-    message[0] = XCP_PID_CMD_CONNECT;     //0xFF
-    message[1] = 0x00;                    //XCP normal mode
-
-    uint8_t * msg_send = message;
-
-    hfdcan2_TxHeader.DataLength = sizeof(message);
-
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
-    {
-        /* Transmission request Error */
-        Error_Handler();
-    }
-
-	#warning "mogoce potrebno spremeniti"
-    while (CAN_XCP_response() != XCP_PID_RES) {
-        HAL_Delay(5);
-    }
-}
-
-void write_trq(void) {
+void write_trq(void)
+{
     //trq request, first command
     unsigned char message[8] = {0};
     unsigned inAddress = RequestedTorque;
@@ -284,13 +267,54 @@ void write_trq(void) {
         Error_Handler();
     }
 
-    fdcan_state = FDCAN_SECOND_MSG_RESPONSE;
-
+    fdcan_state = FDCAN_FIRST_MSG_RESPONSE;
 }
 
 
+char CAN_XCP_INIT()
+{
+	fdcan_state = FDCAN_MOTOR_INIT;
 
-void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer) {        //XCP write msg, address, extension 0 or 1, length? buffer?
+    CAN_XCP_connect();
+    //init
+    unsigned char SetUp = 1;
+    CAN_XCP_write(Motorcontrol_Mode, 0, sizeof(SetUp), (char *)&SetUp);
+    CAN_XCP_write(Motorcontrol_Mode_S, 1, sizeof(SetUp), (char *)&SetUp);
+    CAN_XCP_write(MTC_Switch, 0, sizeof(SetUp), (char *)&SetUp);
+    CAN_XCP_write(MTC_S_Switch, 1, sizeof(SetUp), (char *)&SetUp);
+
+    fdcan_state = FDCAN_FREE;
+    return 1; //all good
+}
+
+
+void CAN_XCP_connect()
+{        //XCP connect message, probably 0xFF00 is enough
+
+	unsigned char message[2] = {0};
+
+    memset(&message, 0, sizeof(message));
+    message[0] = XCP_PID_CMD_CONNECT;     //0xFF
+    message[1] = 0x00;                    //XCP normal mode
+
+    uint8_t * msg_send = message;
+
+    hfdcan2_TxHeader.DataLength = sizeof(message);
+
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+    {
+        /* Transmission request Error */
+        Error_Handler();
+    }
+
+    while (CAN_XCP_response() != XCP_PID_RES) {
+        HAL_Delay(5);
+    }
+}
+
+
+void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer)
+{        //XCP write msg, address, extension 0 or 1, length? buffer?
 
 	unsigned char message[8] = {0};
     signed long byte_counter = inLength - 1;
@@ -315,12 +339,9 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
       Error_Handler();
     }
 
-	#warning "tudi mogoce potrebno spremeniti"
     while (CAN_XCP_response() != XCP_PID_RES) {
         HAL_Delay(2);
     }
-
-
 
       //now the response was positive and we can send actual data we want
 
@@ -352,19 +373,9 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
 }
 
 
-char CAN_XCP_INIT() {
-    CAN_XCP_connect();
-    //init
-    unsigned char SetUp = 1;
-    CAN_XCP_write(Motorcontrol_Mode, 0, sizeof(SetUp), (char *)&SetUp);
-    CAN_XCP_write(Motorcontrol_Mode_S, 1, sizeof(SetUp), (char *)&SetUp);
-    CAN_XCP_write(MTC_Switch, 0, sizeof(SetUp), (char *)&SetUp);
-    CAN_XCP_write(MTC_S_Switch, 1, sizeof(SetUp), (char *)&SetUp);
-
-    return 1; //all good
-}
 //response for commands
-int CAN_XCP_response() {    //done by interrupt, from now on used for init only
+int CAN_XCP_response()
+{    //done by interrupt, from now on used for init only
     ////get response
         ///rework this return thingie
     while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0) {}

@@ -64,7 +64,7 @@ typedef enum
 	FDCAN_SECOND_MSG_RESPONSE,
 	FDCAN_ERROR_WHEN_TRANSMITTING,
 	FDCAN_UNKNOWN_ERROR,
-	MOTOR_INIT
+	FDCAN_MOTOR_INIT
 } fdcan_State_t;
 
 fdcan_State_t fdcan_state;
