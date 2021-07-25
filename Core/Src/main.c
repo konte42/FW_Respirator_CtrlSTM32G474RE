@@ -91,7 +91,7 @@ ControlData_t ControlData =
 int _write(int file, char *ptr, int len)
 {
   HAL_UART_Transmit_IT(&huart1, (uint8_t*)ptr, len);
-  return UART_OK;
+  return len;
 }
 
 void dummy()
@@ -112,14 +112,11 @@ int main(void)
 	  char msg[MSG_SETTINGS_REPLY_LENGTH];
 	  int length;
 	  char com_data;
-	#ifdef AVR
-	  uint32_t mark1=0;
-	#endif
 	  uint32_t mark2=0;
 	  uint32_t mark1ms=0;
 	  uint8_t newSettingsReceived;
 	  ErrCodes_t err;
-	  ProcMsgState_t PMSuart0 = {0};
+	  ProcMsgState_t PMSuart2 = {0};
 	  ProcMsgState_t PMSuart1 = {0};
 
 	  /*
@@ -129,6 +126,7 @@ int main(void)
 	  fpidData_t PIDdata;	//Same PID params if regulating P or V ? Probably not.
 						  //Maybe make PID params local to ActuatorControl?
 */
+	  //setvbuf(stdout, NULL, _IONBF, 0);
 	  ErrQueue_Init(&DefaultErrorQueue);
 	  memset(&Settings,0,sizeof(RespSettings_t));
 	  memset(&Measured,0,sizeof(MeasuredParams_t));
@@ -231,7 +229,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
     HAL_ADCEx_Calibration_Start(&hadc2, ADC_SINGLE_ENDED);
     HAL_ADCEx_Calibration_Start(&hadc4, ADC_SINGLE_ENDED);
-    Ringbuf0_Init();
+    Ringbuf2_Init();
     Ringbuf1_Init();
     HAL_TIM_Base_Start(&htim3);
     HAL_TIM_Base_Start(&htim4);
@@ -239,8 +237,17 @@ int main(void)
     HAL_ADC_Start_IT(&hadc2);
     HAL_ADC_Start_IT(&hadc4);
     MeasureInit();
-    motor_Init();
     BUZZ_Off();
+#ifdef TESTING //zakomentiraj v CommonDefinitions.h
+    char trydata[] = "kijtrg";
+    while(1)
+    {
+    	HAL_UART_Transmit_IT(&huart1, trydata, sizeof(trydata));
+    	HAL_Delay(1);
+    }
+#endif
+    motor_Init();
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -255,6 +262,8 @@ int main(void)
         mark1ms=HAL_GetTick();
         DetectPowerStatus();
       }
+
+#warning "zaradi zakasnitve povezave z motojem bo mogoce potrebno spremeniti takt delovanja. trenutno je takt na 1 ms, potrebno pa bi bilo vec kot potrebuje povezava, najbrz >12 ms"
 
       if (ADC_scan_complete())
       {
@@ -329,13 +338,6 @@ int main(void)
       }
 
       // na 2 ms
-  #ifdef AVR	//On ARM AD conversions are triggered once per ms by a timer
-      if (Has_X_MillisecondsPassed(TIME_SLICE_MS,&mark1))
-      {
-  	    ADC_Start_First_Conversion();
-      }
-  #endif
-
 
       //Report Status to the GUI
       //    if (Has_X_MillisecondsPassed(STATUS_REPORTING_PERIOD,&mark2))
@@ -343,14 +345,14 @@ int main(void)
       {
         Control.ReportReady &= ~(1<<CTR_REPRDY_INSP);
         length=PrepareMetricsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Metrics);
-        UART0_SendBytes(msg,length);
+        UART2_SendBytes(msg,length);
         UART1_SendBytes(msg,length);
       }
       if (Control.ReportReady & (1<<CTR_REPRDY_EXP))
       {
         Control.ReportReady &= ~(1<<CTR_REPRDY_EXP);
         length=PrepareMetricsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Metrics);
-        UART0_SendBytes(msg,length);
+        UART2_SendBytes(msg,length);
         UART1_SendBytes(msg,length);
        /* length=PrepareStatisticsMessage(msg, MSG_SETTINGS_REPLY_LENGTH, &Statistics);
         UART0_SendBytes(msg,length);
@@ -368,15 +370,15 @@ int main(void)
              (int16_t)(Measured.volume_t*10.0), (int16_t)motor_GetPosition(),
              (uint16_t)motor_GetCurrent(), (uint16_t) ceil(motor_GetPower()), Control.BreathCounter,
              Control.status, err, Control.target_volume, msg);
-        UART0_SendBytes(msg,length);
+        UART2_SendBytes(msg,length);
         UART1_SendBytes(msg,length);
       }
 
       //Listen for commands
-      if(UART0_DataReady())	//process received data 1 byte per loop
+      if(UART2_DataReady())	//process received data 1 byte per loop
       {
-  	    UART0_GetByte(&com_data);
-  	    ProcessMessages(com_data, &Settings, &PMSuart0, &newSettingsReceived);
+  	    UART2_GetByte(&com_data);
+  	    ProcessMessages(com_data, &Settings, &PMSuart2, &newSettingsReceived);
       }
       if (newSettingsReceived)
       {
@@ -384,7 +386,7 @@ int main(void)
   	    length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
   	    if (length > 0)
   	    {
-          UART0_SendBytes(msg,length);
+          UART2_SendBytes(msg,length);
           UART1_SendBytes(msg,length);
   	    }
       }
@@ -401,7 +403,7 @@ int main(void)
         length=ReportAllCurrentSettings(msg,MSG_SETTINGS_REPLY_LENGTH,&Settings);
         if (length > 0)
         {
-          UART0_SendBytes(msg,length);
+          UART2_SendBytes(msg,length);
           UART1_SendBytes(msg,length);
         }
       }

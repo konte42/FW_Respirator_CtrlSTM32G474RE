@@ -33,6 +33,7 @@ extern "C" {
 
 /* USER CODE BEGIN Private defines */
 
+////////LEDx_xxx definicije so namenjene debuggiranju. Če bo potrebno, se jih lahko spremeni in uporabi/////////////////////////////////
 
 //#define LED1_On()	HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET)
 //#define LED1_Off()	HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_RESET)
@@ -65,8 +66,6 @@ extern "C" {
 #define LED7_On()	{}
 #define LED7_Off()	{}
 #define LED7_Tgl()	{}
-
-#define BUZZ_Tgl()  dummy()
 
 //#warning "Koncna stikala se ne delujejo!!!"
 #define is_SWA() HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)

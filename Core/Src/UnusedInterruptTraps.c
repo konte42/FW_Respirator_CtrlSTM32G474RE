@@ -858,7 +858,7 @@ void USART3_IRQHandler(void)
     uart_dump_put_str ("BADISR: USART3 ");
   }
 }
-/*void EXTI15_10_IRQHandler(void)
+void EXTI15_10_IRQHandler(void)
 {
   volatile int i;
   LED1_Off();
@@ -874,7 +874,7 @@ void USART3_IRQHandler(void)
     LED1_Tgl();
     uart_dump_put_str ("BADISR: ");
   }
-}*/
+}
 void RTC_Alarm_IRQHandler(void)
 {
   volatile int i;
@@ -1640,7 +1640,7 @@ void FDCAN2_IT0_IRQHandler(void)
     LED1_Tgl();
     uart_dump_put_str ("BADISR: FDCAN2_IT0 ");
   }
-}
+}*/
 void FDCAN2_IT1_IRQHandler(void)
 {
   volatile int i;
@@ -1657,7 +1657,7 @@ void FDCAN2_IT1_IRQHandler(void)
     LED1_Tgl();
     uart_dump_put_str ("BADISR: FDCAN2_IT1 ");
   }
-}*/
+}
 void FDCAN3_IT0_IRQHandler(void)
 {
   volatile int i;
@@ -1709,7 +1709,7 @@ void RNG_IRQHandler(void)
     uart_dump_put_str ("BADISR: RNG ");
   }
 }
-/*void LPUART1_IRQHandler(void)
+void LPUART1_IRQHandler(void)
 {
   volatile int i;
   LED1_Off();
@@ -1725,7 +1725,7 @@ void RNG_IRQHandler(void)
     LED1_Tgl();
     uart_dump_put_str ("BADISR: ");
   }
-}*/
+}
 void I2C3_EV_IRQHandler(void)
 {
   volatile int i;

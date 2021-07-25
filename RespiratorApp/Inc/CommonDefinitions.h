@@ -17,6 +17,7 @@
 
 #define PROTOTYPE_V2
 //#define PROTOTYPE_V1
+#define TESTING
 
 //app defines
 #define MSG_CORE_LENGTH	25+12

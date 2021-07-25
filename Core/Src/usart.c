@@ -225,46 +225,33 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef* uartHandle)
 }
 
 /* USER CODE BEGIN 1 */
-//UART0 - system UART - UART1
-//UART1 - debug UART - LPUART1
+//UART2 - system UART - USART2
+//UART1 - debug UART - USART1
 
-#define UART0 huart1
+#define UART2 huart2
 
 /* !!! NASLEDNJO VRSTICO MORAMO VSTAVITI v funkcijo "void USARTx_IRQHandler(void)" ki se nahaja v filu "stm32xxxx_it.c", vse ostalo pa je potrebno zakomentirati.
 				===================>>> extern void Uart_ISR(UART_HandleTypeDef *huart); <<<===================
 */
 
-ring_buffer rx_buffer0 = { { 0 }, 0, 0, 0};
-ring_buffer tx_buffer0 = { { 0 }, 0, 0, 0};
+ring_buffer rx_buffer2 = { { 0 }, 0, 0, 0};
+ring_buffer tx_buffer2 = { { 0 }, 0, 0, 0};
 
 
-ring_buffer *_rx_buffer0;
-ring_buffer *_tx_buffer0;
+ring_buffer *_rx_buffer2;
+ring_buffer *_tx_buffer2;
 
-void Ringbuf0_Init(void)
+void Ringbuf2_Init(void)
 {
-  _rx_buffer0 = &rx_buffer0;
-  _tx_buffer0 = &tx_buffer0;
+  _rx_buffer2 = &rx_buffer2;
+  _tx_buffer2 = &tx_buffer2;
 
 //TODO: Enabling this interrupt disables TIMER3 CH2 PWM. Figure out why!
   /* Incilizacija "UART Error" prekinitve: (Frame error, noise error, overrun error) */
 //  __HAL_UART_ENABLE_IT(&UART0, UART_IT_ERR);
 
   /* Incilizacija "UART Data Register not empty" prekinitve */
-  __HAL_UART_ENABLE_IT(&UART0, UART_IT_RXNE);
-}
-
-void UART0_Init()
-{
-	  UART0.Instance = USART1;						//Izberemo UART kanal
-	  UART0.Init.BaudRate = 115200;				//Izberemo BAUD rate
-	  UART0.Init.WordLength = UART_WORDLENGTH_8B;	//Nastavimo Data bite
-	  UART0.Init.StopBits = UART_STOPBITS_1;		//Nastavimo Stop bite
-	  UART0.Init.Parity = UART_PARITY_NONE;		//nastavimo pariteto
-	  UART0.Init.Mode = UART_MODE_TX_RX;
-	  UART0.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-	  UART0.Init.OverSampling = UART_OVERSAMPLING_16;
-
+  __HAL_UART_ENABLE_IT(&UART2, UART_IT_RXNE);
 }
 
 void store_char(unsigned char c, ring_buffer *buffer)
@@ -278,73 +265,73 @@ void store_char(unsigned char c, ring_buffer *buffer)
   }
 }
 
-int UART0_DataReady(void)
+int UART2_DataReady(void)
 {
-	return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer0->head - _rx_buffer0->tail) % UART_BUFFER_SIZE;
+	return (uint16_t)(UART_BUFFER_SIZE + _rx_buffer2->head - _rx_buffer2->tail) % UART_BUFFER_SIZE;
 }
 
-int UART0_SendStr(const char *s)
+int UART2_SendStr(const char *s)
 {
 	int i;
 	for (i=0; *s; i++)
 	{
-		if (UART0_put(*s++) != UART_OK) return i;
+		if (UART2_put(*s++) != UART_OK) return i;
 	}
 	return i;
 }
 
-int UART0_SendBytes(const char *s, int num)
+int UART2_SendBytes(const char *s, int num)
 {
 	int i;
 	for (i=0; i<num; i++)
 	{
-		if (UART0_put(*s++) != UART_OK) return i;
+		if (UART2_put(*s++) != UART_OK) return i;
 	}
 	return i;
 }
 
-UART_Status_t UART0_put(const char c)
+UART_Status_t UART2_put(const char c)
 {
 	if (c>=0)
 		{
-			int i = (_tx_buffer0->head + 1) % UART_BUFFER_SIZE;
+			int i = (_tx_buffer2->head + 1) % UART_BUFFER_SIZE;
 
 			//Če je output buffer poln javimo napako
-			if(i == _tx_buffer0->tail) return UART_EOF;
+			if(i == _tx_buffer2->tail) return UART_EOF;
 
-			_tx_buffer0->buffer[_tx_buffer0->head] = (uint8_t)c;
-			_tx_buffer0->head = i;
-			_tx_buffer0->count++;
-			__HAL_UART_ENABLE_IT(&UART0, UART_IT_TXE); // Omogočimo UART transmission interrupt
+			_tx_buffer2->buffer[_tx_buffer2->head] = (uint8_t)c;
+			_tx_buffer2->head = i;
+			_tx_buffer2->count++;
+			__HAL_UART_ENABLE_IT(&UART2, UART_IT_TXE); // Omogočimo UART transmission interrupt
 		}
 		return UART_OK;
 }
 
-UART_Status_t UART0_GetByte(char *data)
+UART_Status_t UART2_GetByte(char *data)
 {
 
   //Če head ni pread tail, ni novih znakov
-  if(_rx_buffer0->head == _rx_buffer0->tail)
+  if(_rx_buffer2->head == _rx_buffer2->tail)
   {
     return UART_EOF;
   }
   else
   {
-    *data = _rx_buffer0->buffer[_rx_buffer0->tail];
-    _rx_buffer0->tail = (unsigned int)(_rx_buffer0->tail + 1) % UART_BUFFER_SIZE;
-    _rx_buffer0->count--;
+    *data = _rx_buffer2->buffer[_rx_buffer2->tail];
+    _rx_buffer2->tail = (unsigned int)(_rx_buffer2->tail + 1) % UART_BUFFER_SIZE;
+    _rx_buffer2->count--;
     return UART_OK;
   }
 }
 
-int UART0_numTxBytes()
+int UART2_numTxBytes()
 {
-	return _tx_buffer0->count;
+	return _tx_buffer2->count;
 }
 
-int UART0_numRxBytes()
+int UART2_numRxBytes()
 {
-	return _rx_buffer0->count;
+	return _rx_buffer2->count;
 }
 
 void UART_ISR(UART_HandleTypeDef *huart, ring_buffer* rxBuf, ring_buffer* txBuf)
@@ -436,18 +423,6 @@ void Ringbuf1_Init(void)
 
   /* Incilizacija "UART Data Register not empty" prekinitve */
   __HAL_UART_ENABLE_IT(&UART1, UART_IT_RXNE);
-}
-
-void UART1_Init()
-{
-    UART1.Instance = LPUART1;            //Izberemo UART kanal
-    UART1.Init.BaudRate = 115200;       //Izberemo BAUD rate
-    UART1.Init.WordLength = UART_WORDLENGTH_8B; //Nastavimo Data bite
-    UART1.Init.StopBits = UART_STOPBITS_1;    //Nastavimo Stop bite
-    UART1.Init.Parity = UART_PARITY_NONE;   //nastavimo pariteto
-    UART1.Init.Mode = UART_MODE_TX_RX;
-    UART1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    UART1.Init.OverSampling = UART_OVERSAMPLING_16;
 }
 
 int UART1_DataReady(void)

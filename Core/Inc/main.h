@@ -80,6 +80,8 @@ void dummy();
 #define PWR_SRC_AC_GPIO_Port GPIOA
 #define USB_SENS_Pin GPIO_PIN_5
 #define USB_SENS_GPIO_Port GPIOB
+#define Ajs_KratekStikNaGND_Pin GPIO_PIN_8
+#define Ajs_KratekStikNaGND_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 #define TRAP_LOOP_DELAY_LENGTH 4000000
 /* USER CODE END Private defines */

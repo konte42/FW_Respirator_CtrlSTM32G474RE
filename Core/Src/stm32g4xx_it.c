@@ -239,7 +239,8 @@ void USART1_IRQHandler(void)
 void USART2_IRQHandler(void)
 {
   /* USER CODE BEGIN USART2_IRQn 0 */
-	  UART_ISR(&huart2, &rx_buffer0, &tx_buffer0);
+	  UART_ISR(&huart2, &rx_buffer2, &tx_buffer2);
+
   /* USER CODE END USART2_IRQn 0 */
   /* USER CODE BEGIN USART2_IRQn 1 */
 

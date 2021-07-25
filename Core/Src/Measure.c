@@ -17,28 +17,11 @@ void MeasureFlow(MeasuredParams_t* Measured)
 	uint16_t *ADC_Results;
 	float a,b,c,d; //koeficienti polinoma za kalibracijo
 	float flow_positive;
-#ifdef PROTOTYPE_V1
-	float flow_negative;
-#endif
 	float flow; // l/min
 	float x;
 	
 	ADC_Results=ADC_results_p();
 	flow_positive = *(ADC_Results+ADC_CH_FLOW  );
-#ifdef PROTOTYPE_V1
-	flow_negative = *(ADC_Results+ADC_CH_FLOW_N);
-
-	if (flow_positive > flow_negative)
-	{
-		x=flow_positive;
-		flow = -2.60967E-08*x*x + 5.33758E-03*x - 45.4;//pozitivna stran
-	}
-	else
-	{
-		x=flow_negative;
-		flow = -(-3.56553E-08*x*x + 5.68075E-03*x - 45.4);
-	}
-#elif defined(PROTOTYPE_V2)
 
 	x = flow_positive - FLOW_ZERO;	//odstej offset
 
@@ -76,9 +59,7 @@ void MeasureFlow(MeasuredParams_t* Measured)
 	}
 
 	flow = ((a*x+b)*x+c)*x+d;	//more efficient coding.
-  #else
-#error Prototype version not defined.
-#endif
+
 	if (flow < FLOW_ZERO_TRESHOLD && flow > -FLOW_ZERO_TRESHOLD) flow = 0.0;
 	if (flow >FLOW_MAX_LPERMIN) flow=FLOW_MAX_LPERMIN;
 	if (flow <FLOW_MIN_LPERMIN) flow=FLOW_MIN_LPERMIN;

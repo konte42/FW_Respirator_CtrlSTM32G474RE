@@ -51,11 +51,7 @@ int16_t Lookup( uint16_t x_value, lookup_table_t *tabela)
 		}
 		else
 		{
-#ifdef AVR
-			return pgm_read_word(&(tabela->p_table[element_index]));
-#else
 			return tabela->p_table[element_index];
-#endif
 		}
 		
 	}
@@ -70,11 +66,7 @@ int16_t Lookup( uint16_t x_value, lookup_table_t *tabela)
 	}
 	else
 	{
-#ifdef AVR
-		k = ((int16_t)pgm_read_word(&(tabela->p_table[element_index + 1])) - (int16_t)pgm_read_word(&(tabela->p_table[element_index]))) / tabela->step;
-#else
 		k = ((int16_t)tabela->p_table[element_index + 1] - (int16_t)tabela->p_table[element_index]) / tabela->step;
-#endif
 	}
 	
 	
@@ -85,11 +77,7 @@ int16_t Lookup( uint16_t x_value, lookup_table_t *tabela)
 	}
 	else
 	{
-#ifdef AVR
-		return (pgm_read_word(&tabela->p_table[element_index]) + k * delta);
-#else
 		return (tabela->p_table[element_index]+ k * delta);
-#endif
 	}
 	
 }

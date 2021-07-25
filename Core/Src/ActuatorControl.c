@@ -7,14 +7,14 @@
 #include "ActuatorControl.h"
 
   float motorSpeed;
-  float motorCurrent;
+  //float motorCurrent;
 //TODO: every time control mode is changed, PID could be reset and loaded with appropriate parameters
 void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlParams_t* Control, ControlData_t *ControlData)
 {
 //  static uint8_t last_mode = CTRL_PAR_MODE_STOP;
 //  uint8_t cur_mode = Control->mode;
 
-	motorCurrent=motor_GetCurrent();
+	//motorCurrent=motor_GetCurrent();
 	Control->cur_position = motor_GetPosition();
 	Control->cur_speed = (Control->cur_position - Control->last_position) / TIME_SLICE_MS;
 	

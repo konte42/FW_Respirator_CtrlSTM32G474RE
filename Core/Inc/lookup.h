@@ -11,9 +11,6 @@
 
 #include <inttypes.h>
 
-#ifdef AVR
-#include <avr/pgmspace.h>
-#endif
 
 typedef enum 
 {

@@ -20,12 +20,6 @@ void motor_Init()
 }
 
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-#warning "manjka implementacija IRQ za detekcijo koncnih stikal motorja. S tem motorjem ne moremo doseci zelenega v tej funkciji, ker potrebujemo cca 10 ms za prenos ukaza motorju"
-}
-
-
 void motor_SetPower(float power)	// -100 - 100
 {
 	if(fdcan_state == FDCAN_FREE)
@@ -51,8 +45,7 @@ float motor_GetPosition()	//0 - 100 = normal open - normal closed
 float motor_GetCurrent()
 {
 	#warning "Toka ne moremo brati v verziji 3"
-	float raw=*(ADC_results_p()+ADC_CH_MOTOR_CURRENT);
-	return raw*0.624179;	// mA
+	return 0;	// mA
 }
 
 

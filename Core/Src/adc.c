@@ -26,9 +26,9 @@ int ADCstage=0;
 uint8_t ADC_complete = 0;
 uint16_t ADC_results[5]={0,0,0,0,0};	// interni rezultati - double buffering
 
+
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc)
 {
- //PROTOTYPE_V3
   if (hadc->Instance == ADC2)
   {
     ADC_results[ADC_CH_POSITION] = hadc->Instance->DR;

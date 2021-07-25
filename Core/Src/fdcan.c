@@ -19,14 +19,12 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
-#include "XCP.h"
-
 
 /* USER CODE BEGIN 0 */
 
 /* USER CODE END 0 */
 
-
+FDCAN_HandleTypeDef hfdcan2;
 
 /* FDCAN2 init function */
 void MX_FDCAN2_Init(void)
@@ -365,6 +363,7 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     	/* Transmission request Error */
         Error_Handler();
     }
+
 
     while (CAN_XCP_response() != XCP_PID_RES)
     {
