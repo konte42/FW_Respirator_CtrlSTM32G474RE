@@ -26,5 +26,7 @@ typedef enum
 
 PowerStatus_t DetectPowerStatus();
 void TurnOff();
+void SW_LED_On();
+void SW_LED_Off();
 
 #endif /* INC_POWERSTATUS_H_ */

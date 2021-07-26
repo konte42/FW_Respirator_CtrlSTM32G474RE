@@ -21,11 +21,11 @@
 
 //app defines
 #define MSG_CORE_LENGTH	25+12
-#ifdef AVR
-#define TIME_SLICE_MS	2	//Timeslice in ms
-#else
-#define TIME_SLICE_MS	1	//Timeslice in ms
-#endif
+
+#define TIME_SLICE_MS	20	//Timeslice in ms
+
+#define OFF_SW_HOLD_TIME	3000  //how long you need to hold ON/OFF button to turn off in ms
+
 #define STATUS_REPORTING_PERIOD	10	// ms
 
 #define METRICS_MAX_HIST_LENGTH   12

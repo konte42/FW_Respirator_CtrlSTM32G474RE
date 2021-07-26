@@ -48,31 +48,52 @@ PowerStatus_t DetectPowerStatus()
 //funkcija TurnOff ugasne sistem po spustu on/off tipke tre prizge led na tipki, ko je tipka pritisnjena
 void TurnOff(void)
 {
+
 	static int PWR_SW_state = 1; //predstavlja stanje tipke
-	static int PWR_OFF = 0;	//zastavica, ki prikazuje, če je potrebno ugasniti sistem
+	static int PWR_OFF = 0;	//zastavica, ki prikazuje, ce je potrebno ugasniti sistem
+	static uint16_t PWR_OFF_counter = 0;
 	int PWR_SW_state_new = HAL_GPIO_ReadPin(ON_OFF_STATE_GPIO_Port, ON_OFF_STATE_Pin);
 
-	//preveri, ce si pritisnil tipko, da ugasnes napravo
+
+	//preveri, ce si na novo pritisnil tipko
 	if(PWR_SW_state != PWR_SW_state_new && PWR_SW_state_new == 1)
 	{
 		PWR_OFF = 1;
 	}
-	//ko tipko spustis, se naprava ugasne
-	else if(PWR_OFF == 1 && PWR_SW_state_new == 0)
+
+	//ce je bila pritisnjena tipka, zacni steti koliko casa je ze pritisnjena
+	if(PWR_OFF)
 	{
-		HAL_GPIO_WritePin(OFF_GPIO_Port, OFF_Pin, GPIO_PIN_SET);
+		PWR_OFF_counter += TIME_SLICE_MS;
+
+		//ce je bila vmes tipka spuscena, ponastavi stetje
+		if(PWR_SW_state != PWR_SW_state_new && PWR_SW_state_new == 0)
+		{
+			PWR_OFF = 0;
+			PWR_OFF_counter = 0;
+		}
 	}
 
-	//priziganje in ugasanje LED na ON OFF tipki - prizgana, ko je tipka pritisnejan
-	if(PWR_SW_state_new == 1)
+	//ko je tipka pritisnjena dovolj casa (definirano z OFF_SW_HOLD_TIME), ugasni LED na tipki in ugasni sistem
+	//tu se lahko implementira se koda, ki naroci RPi, da se ugasne
+	if(PWR_OFF_counter >= OFF_SW_HOLD_TIME)
 	{
-		HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_SET);
-	}
-	else if(PWR_SW_state_new == 0)
-	{
-		HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
+		HAL_GPIO_WritePin(OFF_GPIO_Port, OFF_Pin, GPIO_PIN_SET);
+		SW_LED_Off();
 	}
 
 	PWR_SW_state = PWR_SW_state_new;
 
+}
+
+
+
+void SW_LED_On()
+{
+	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_SET);
+}
+
+void SW_LED_Off()
+{
+	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
 }

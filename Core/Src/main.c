@@ -263,7 +263,7 @@ int main(void)
         DetectPowerStatus();
       }
 
-#warning "zaradi zakasnitve povezave z motojem bo mogoce potrebno spremeniti takt delovanja. trenutno je takt na 1 ms, potrebno pa bi bilo vec kot potrebuje povezava, najbrz >12 ms"
+#warning "takt programa je nastavljen na 20 ms"
 
       if (ADC_scan_complete())
       {
