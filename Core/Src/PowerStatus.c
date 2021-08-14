@@ -76,10 +76,13 @@ void TurnOff(void)
 
 	//ko je tipka pritisnjena dovolj casa (definirano z OFF_SW_HOLD_TIME), ugasni LED na tipki in ugasni sistem
 	//tu se lahko implementira se koda, ki naroci RPi, da se ugasne
-	if(PWR_OFF_counter >= OFF_SW_HOLD_TIME)
+#warning "ce bo prevec debouncinga na tipki, se se lahko sistem prizge nazaj takoj po spustu tipke"
+	if(PWR_OFF_counter >= OFF_SW_HOLD_TIME_MS)
 	{
+		CAN_XCP_write(RequestedTorque, 0 , 4 , 0 );
 		HAL_GPIO_WritePin(OFF_GPIO_Port, OFF_Pin, GPIO_PIN_SET);
 		SW_LED_Off();
+		while(1){};
 	}
 
 	PWR_SW_state = PWR_SW_state_new;

@@ -42,6 +42,7 @@ FDCAN_RxHeaderTypeDef hfdcan2_RxHeader;
 uint8_t fdcanTxData[8];
 uint8_t fdcanRxData[8];
 float trq;
+int motor_init_msg_recieved_flag;
 
 
 /* USER CODE END Private defines */
@@ -54,7 +55,6 @@ char CAN_XCP_INIT();
 void CAN_XCP_connect();
 void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer);
 void write_trq(void);
-
 int CAN_XCP_response();
 
 typedef enum
@@ -68,6 +68,15 @@ typedef enum
 } fdcan_State_t;
 
 fdcan_State_t fdcan_state;
+
+typedef enum
+{
+	FAILED_TRANSMISSION,
+	FAILED_RECEPRION,
+	FAILED_FIFO0_CHECK
+} fdcan_error_t;
+
+fdcan_error_t fdcan_error;
 
 /* USER CODE END Prototypes */
 

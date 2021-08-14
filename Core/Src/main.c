@@ -238,15 +238,34 @@ int main(void)
     HAL_ADC_Start_IT(&hadc4);
     MeasureInit();
     BUZZ_Off();
+    motor_Init();
+#warning "izgleda, kot da so postavljene zastavice za prejeto sporocilo, ker takoj po aktivaciji IT skoci v prekinitev"
+
 #ifdef TESTING //zakomentiraj v CommonDefinitions.h
-    char trydata[] = "kijtrg";
+    //float test_trq = 0.1;
+    trq = 0.1;
+    //uint8_t fdcanTxData[8]={0,0,0,0,0,0,0,0};
+    //fdcanTxData[0] = 0xFF;
+    //fdcanTxData[3] = 0x42;
     while(1)
     {
-    	HAL_UART_Transmit_IT(&huart1, trydata, sizeof(trydata));
-    	HAL_Delay(1);
+    	write_trq();
+    	//HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, fdcanTxData);
+    	/*uint32_t time1 = HAL_GetTick();
+    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	uint32_t time2 = HAL_GetTick();
+    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	uint32_t time3 = HAL_GetTick();
+    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	uint32_t time4 = HAL_GetTick();
+    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	uint32_t time5 = HAL_GetTick();
+    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	uint32_t time6 = HAL_GetTick();
+    	//HAL_Delay(1000);*/
     }
 #endif
-    motor_Init();
+
 
   /* USER CODE END 2 */
 
@@ -263,7 +282,7 @@ int main(void)
         DetectPowerStatus();
       }
 
-#warning "takt programa je nastavljen na 20 ms"
+#warning "takt programa je nastavljen na 25 ms"
 
       if (ADC_scan_complete())
       {
@@ -276,25 +295,26 @@ int main(void)
         TurnOff();
 
         // preverja delovanje s priziganjem pina za led na tipki, zakomentiranj kasneje
-        /*
-        uint8_t fdcanTxData[8];
+/*
+        uint8_t fdcanTxData[8]={0,0,0,0,0,0,0,0};
         fdcanTxData[0] = 0xFF;
         fdcanTxData[3] = 0x42;
 
         indikator++;
 
-        if(indikator == 1000)
+
+        if(indikator == 50)
         {
         	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_SET);
-        	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, &fdcanTxData);
+        	HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, fdcanTxData);
         }
-        else if(indikator==2000)
+        else if(indikator==100)
         {
         	HAL_GPIO_WritePin(TIPKA_LED_GPIO_Port, TIPKA_LED_Pin, GPIO_PIN_RESET);
         	indikator=0;
         }
-		*/
 
+*/
 
 
         //TODO: mode state machines must return HW independent control values
@@ -302,7 +322,7 @@ int main(void)
         {
           case MODE_STOP:
             modeSTOP(&Settings, &Measured, &Control);
-            ActuatorControl(&Settings,&Measured,&Control,&ControlData);
+            //ActuatorControl(&Settings,&Measured,&Control,&ControlData);
             break;
 
           case MODE_CMV:

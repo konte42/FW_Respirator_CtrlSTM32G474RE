@@ -20,17 +20,42 @@ void motor_Init()
 }
 
 
-void motor_SetPower(float power)	// -100 - 100
+void motor_SetPower(float power)	// -100 - 100, +navor je vdih, -navor je izdih
 {
+#ifdef FDCAN_WITH_INTERRUPTS
 	if(fdcan_state == FDCAN_FREE)
 	{
-		if(HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)) {trq = MOTOR_MIN_TORQUE;}
-		else if(HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)) {trq = 0;}
+		if(HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)&&power>0) {trq = MOTOR_MIN_TORQUE;}
+		else if(HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)&&power<0) {trq = 0;}
 		else trq = MOTOR_MAX_TORQUE * (power/100);
+
+		if (trq>MOTOR_MAX_TORQUE){
+			Error_Handler();
+		}
 
 		write_trq();
 	}
-	else return;
+	else Error_Handler();
+#else
+	if(fdcan_state == FDCAN_FREE)
+	{
+		float trq_no_it;
+
+		if(HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)&&power>0) {trq_no_it = MOTOR_MIN_TORQUE;}
+		else if(HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)&&power<0) {trq_no_it = 0;}
+		else trq_no_it = MOTOR_MAX_TORQUE * (power/100);
+
+		trq = trq_no_it;
+
+		if (trq>MOTOR_MAX_TORQUE){
+			Error_Handler();
+		}
+
+		CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&trq_no_it );
+	}
+	else Error_Handler();
+
+#endif
 }
 
 
