@@ -19,7 +19,6 @@
 
 /* Includes ------------------------------------------------------------------*/
 #include "fdcan.h"
-#include "CommonDefinitions.h"
 
 /* USER CODE BEGIN 0 */
 
@@ -397,9 +396,15 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
 //response for commands
 int CAN_XCP_response()
 {    //done by interrupt, from now on used for init only
-    ////get response
-        ///rework this return thingie
-    while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0) {}
+    //get response
+    //rework this return thingie
+	int i=0;
+    while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0)
+    {
+    	i++;
+    	HAL_Delay(1);
+    	if (i>15) return XCP_PID_RES;
+    }
 
     /*uint8_t recieved[8] = {0};
     uint32_t naslovi[10] = {0};

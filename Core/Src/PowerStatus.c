@@ -54,7 +54,6 @@ void TurnOff(void)
 	static uint16_t PWR_OFF_counter = 0;
 	int PWR_SW_state_new = HAL_GPIO_ReadPin(ON_OFF_STATE_GPIO_Port, ON_OFF_STATE_Pin);
 
-
 	//preveri, ce si na novo pritisnil tipko
 	if(PWR_SW_state != PWR_SW_state_new && PWR_SW_state_new == 1)
 	{

@@ -17,7 +17,7 @@
 
 #define PROTOTYPE_V2
 //#define PROTOTYPE_V1
-#define TESTING
+//#define TESTING
 //#define FDCAN_WITH_INTERRUPTS
 // TODO: make motor_init with IT as well, until then dont use IT
 

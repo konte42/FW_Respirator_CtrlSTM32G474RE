@@ -67,8 +67,8 @@ extern "C" {
 #define LED7_Off()	{}
 #define LED7_Tgl()	{}
 
-#define is_SWA() HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)
-#define is_SWB() HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)
+#define is_SWA() !HAL_GPIO_ReadPin(SW_VDIH_GPIO_Port, SW_VDIH_Pin)
+#define is_SWB() !HAL_GPIO_ReadPin(SW_IZDIH_GPIO_Port, SW_IZDIH_Pin)
 
 
 

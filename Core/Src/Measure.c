@@ -6,7 +6,6 @@
  */ 
 #include "Measure.h"
 #include <math.h>
-#define FLOW_ZERO   32420.0
 
 void MeasureInit()
 {
