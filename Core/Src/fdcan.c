@@ -358,7 +358,7 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     /*while (motor_init_msg_recieved_flag == 0) {}
     if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}*/
     while (CAN_XCP_response() != XCP_PID_RES) {
-        //HAL_Delay(2);
+        //HAL_Delay(1);
     }
 
       //now the response was positive and we can send actual data we want
@@ -388,7 +388,7 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     /*while (motor_init_msg_recieved_flag == 0) {}
     if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}*/
     while (CAN_XCP_response() != XCP_PID_RES) {
-        //HAL_Delay(2);
+        //HAL_Delay(1);
     }
 }
 

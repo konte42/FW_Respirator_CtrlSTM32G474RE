@@ -35,7 +35,7 @@
 
 // TODO: "definiraj maksimalni in minimalni navor, 0.7 in 0.01 so simbolicne"
 #warning "definiraj maksimalni in minimalni navor, 0.7 in 0.01 so simbolicne"
-#define MOTOR_MAX_TORQUE	0.4
+#define MOTOR_MAX_TORQUE	0.35
 #define MOTOR_MIN_TORQUE	0.08	//minimalni potrebni navor, da bo držal balon stisnjen
 
 // ******************************

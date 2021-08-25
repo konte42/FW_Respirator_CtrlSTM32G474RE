@@ -242,18 +242,18 @@ int main(void)
 #warning "izgleda, kot da so postavljene zastavice za prejeto sporocilo, ker takoj po aktivaciji IT skoci v prekinitev"
 
 #ifdef TESTING //zakomentiraj v CommonDefinitions.h
-    //float test_trq = 0.1;
-    trq = 0.1;
+    float test_trq = 0.09;
+    //trq = 0.1;
     //uint8_t fdcanTxData[8]={0,0,0,0,0,0,0,0};
     //fdcanTxData[0] = 0xFF;
     //fdcanTxData[3] = 0x42;
     while(1)
     {
-    	write_trq();
+    	//write_trq();
     	//HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, fdcanTxData);
-    	/*uint32_t time1 = HAL_GetTick();
+    	//uint32_t time1 = HAL_GetTick();
     	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
-    	uint32_t time2 = HAL_GetTick();
+    	/*uint32_t time2 = HAL_GetTick();
     	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
     	uint32_t time3 = HAL_GetTick();
     	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
