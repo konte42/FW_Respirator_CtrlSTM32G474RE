@@ -66,7 +66,7 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
 		  motorSpeed=0;
 			if (Control->target_position - Control->cur_position >= 0)
 			{
-				if (Control->target_position - Control->cur_position > 2) motorSpeed=25;
+				if (Control->target_position - Control->cur_position > 2) motorSpeed=30;
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;
@@ -75,7 +75,7 @@ void ActuatorControl(RespSettings_t *Settings, MeasuredParams_t* Measured, CtrlP
 			}
 			if (Control->target_position - Control->cur_position < 0)
 			{
-				if (Control->target_position - Control->cur_position < -2) motorSpeed=-15;
+				if (Control->target_position - Control->cur_position < -2) motorSpeed=-30;
 				else
 				{
 					Control->mode=CTRL_PAR_MODE_STOP;

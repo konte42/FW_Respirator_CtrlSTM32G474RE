@@ -42,7 +42,7 @@ FDCAN_RxHeaderTypeDef hfdcan2_RxHeader;
 uint8_t fdcanTxData[8];
 uint8_t fdcanRxData[8];
 float trq;
-int motor_init_msg_recieved_flag;
+//int motor_init_msg_recieved_flag;
 
 
 /* USER CODE END Private defines */
@@ -54,8 +54,10 @@ void MX_FDCAN2_Init(void);
 char CAN_XCP_INIT();
 void CAN_XCP_connect();
 void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer);
+void CAN_XCP_write_trq(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer);
 void write_trq(void);
 int CAN_XCP_response();
+void CAN_XCP_CLEAR(void);
 
 typedef enum
 {

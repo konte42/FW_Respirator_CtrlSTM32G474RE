@@ -302,7 +302,7 @@ UART_Status_t UART2_put(const char c)
 			_tx_buffer2->buffer[_tx_buffer2->head] = (uint8_t)c;
 			_tx_buffer2->head = i;
 			_tx_buffer2->count++;
-			__HAL_UART_ENABLE_IT(&UART2, UART_IT_TXE); // Omogoƒçimo UART transmission interrupt
+			__HAL_UART_ENABLE_IT(&UART2, UART_IT_TXE); // Omogoƒ?imo UART transmission interrupt
 		}
 		return UART_OK;
 }
@@ -462,7 +462,7 @@ UART_Status_t UART1_put(const char c)
       _tx_buffer1->buffer[_tx_buffer1->head] = (uint8_t)c;
       _tx_buffer1->head = i;
       _tx_buffer1->count++;
-      __HAL_UART_ENABLE_IT(&UART1, UART_IT_TXE); // Omogoƒçimo UART transmission interrupt
+      __HAL_UART_ENABLE_IT(&UART1, UART_IT_TXE); // Omogoƒ?imo UART transmission interrupt
     }
     return UART_OK;
 }

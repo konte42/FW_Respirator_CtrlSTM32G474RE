@@ -61,7 +61,7 @@ void motor_SetPower(float power)	// -100 - 100, +navor je vdih, -navor je izdih
 //			Error_Handler();
 //		}
 
-		CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&trq_no_it);
+		CAN_XCP_write_trq(RequestedTorque, 0 , 4 , (char *)&trq_no_it);
 	}
 	else Error_Handler();
 

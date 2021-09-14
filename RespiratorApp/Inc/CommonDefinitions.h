@@ -25,11 +25,11 @@
 //app defines
 #define MSG_CORE_LENGTH	25+12
 
-#define TIME_SLICE_MS	25	//Timeslice in ms
+#define TIME_SLICE_MS	10	//Timeslice in ms
 
 #define OFF_SW_HOLD_TIME_MS	3000  //how long you need to hold ON/OFF button to turn off in ms
 
-#define STATUS_REPORTING_PERIOD	20	// ms
+#define STATUS_REPORTING_PERIOD	10	// ms
 
 #define METRICS_MAX_HIST_LENGTH   12
 #define METRICS_MIN_HIST_LENGTH   3

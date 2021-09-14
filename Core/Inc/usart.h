@@ -99,7 +99,7 @@ int UART1_numTxBytes();
 int UART2_numRxBytes();
 int UART1_numRxBytes();
 
-/*Vrne 0, če v medpomnilniku še ni novega podatka, karkoli drugega, če v sprejemnem medpomnilniku že čaka nov podatek*/
+/*Vrne 0, �?e v medpomnilniku še ni novega podatka, karkoli drugega, �?e v sprejemnem medpomnilniku že �?aka nov podatek*/
 int UART2_DataReady(void);
 int UART1_DataReady(void);
 
@@ -111,7 +111,7 @@ UART_Status_t UART1_put(const char c);
 UART_Status_t UART2_GetByte(char *data);
 UART_Status_t UART1_GetByte(char *data);
 
-/*ISR funkcija. POMEMBNO!!! Potrebno jo je vključiti v glavni program*/
+/*ISR funkcija. POMEMBNO!!! Potrebno jo je vklju�?iti v glavni program*/
 void UART_ISR(UART_HandleTypeDef *huart, ring_buffer* rxBuf, ring_buffer* txBuf);
 /* USER CODE END Prototypes */
 

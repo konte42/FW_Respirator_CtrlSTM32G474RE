@@ -282,7 +282,7 @@ void write_trq(void)
 }
 
 
-char CAN_XCP_INIT()
+char CAN_XCP_INIT(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer)
 {
 	fdcan_state = FDCAN_MOTOR_INIT;
 
@@ -294,6 +294,41 @@ char CAN_XCP_INIT()
     CAN_XCP_write(Motorcontrol_Mode_S, 1, 4, (char *)&SetUp2);
     CAN_XCP_write(MTC_Switch, 0, 1, (char *)&SetUp);
     CAN_XCP_write(MTC_S_Switch, 1, 1, (char *)&SetUp);
+
+    HAL_Delay(500);
+
+    unsigned char message[8] = {0};
+	signed long byte_counter = inLength - 1;
+	//unsigned long byte_counter_old = 0;
+
+	CAN_XCP_CLEAR();
+
+	memset(&message, 0, sizeof(message));
+	message[0] = XCP_PID_CMD_SET_MTA;		//F6
+	message[3] = inExtension;
+	message[4] = (unsigned char)(inAddress >> 24);
+	message[5] = (unsigned char)(inAddress >> 16);
+	message[6] = (unsigned char)(inAddress >> 8);
+	message[7] = (unsigned char)(inAddress >> 0);
+
+	uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
+
+	//hfdcan2_TxHeader.DataLength = sizeof(message);
+	//static can_fesp_t TxData;         //8 byte data in union to be send
+
+	if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+	{
+	  /* Transmission request Error */
+	  Error_Handler();
+	}
+
+	HAL_Delay(3);
+	CAN_XCP_CLEAR();
+
+	if (CAN_XCP_response() != XCP_PID_RES) {
+		//Error_Handler();
+		return;
+	}
 
     fdcan_state = FDCAN_FREE;
     return HAL_OK; //all good
@@ -323,8 +358,10 @@ void CAN_XCP_connect()
 
     /*while (motor_init_msg_recieved_flag == 0) {}
     if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}*/
+    //HAL_Delay(1);
+
     while (CAN_XCP_response() != XCP_PID_RES) {
-        //HAL_Delay(2);
+        //HAL_Delay(1);
     }
 }
 
@@ -336,6 +373,8 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     signed long byte_counter = inLength - 1;
     //unsigned long byte_counter_old = 0;
 
+    CAN_XCP_CLEAR();
+
     memset(&message, 0, sizeof(message));
     message[0] = XCP_PID_CMD_SET_MTA;
     message[3] = inExtension;
@@ -344,7 +383,7 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     message[6] = (unsigned char)(inAddress >> 8);
     message[7] = (unsigned char)(inAddress >> 0);
 
-    uint8_t * msg_send = message;     //to reši vse nadaljne zadeve
+    uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
 
     //hfdcan2_TxHeader.DataLength = sizeof(message);
     //static can_fesp_t TxData;         //8 byte data in union to be send
@@ -357,8 +396,9 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
 
     /*while (motor_init_msg_recieved_flag == 0) {}
     if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}*/
+    HAL_Delay(1);
     while (CAN_XCP_response() != XCP_PID_RES) {
-        //HAL_Delay(1);
+
     }
 
       //now the response was positive and we can send actual data we want
@@ -386,11 +426,78 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
 
 
     /*while (motor_init_msg_recieved_flag == 0) {}
-    if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}*/
-    while (CAN_XCP_response() != XCP_PID_RES) {
-        //HAL_Delay(1);
-    }
+    if(motor_init_msg_recieved_flag) {motor_init_msg_recieved_flag=0;}
+    *///while (CAN_XCP_response() != XCP_PID_RES) {
+    //    HAL_Delay(1);
+    //}
 }
+
+void CAN_XCP_write_trq(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer)
+{        //XCP write msg, address, extension 0 or 1, length? buffer?
+
+	unsigned char message[8] = {0};
+    signed long byte_counter = inLength - 1;
+    //unsigned long byte_counter_old = 0;
+
+    CAN_XCP_CLEAR();
+
+    memset(&message, 0, sizeof(message));
+    message[0] = XCP_PID_CMD_SET_MTA;		//F6
+    message[3] = inExtension;
+    message[4] = (unsigned char)(inAddress >> 24);
+    message[5] = (unsigned char)(inAddress >> 16);
+    message[6] = (unsigned char)(inAddress >> 8);
+    message[7] = (unsigned char)(inAddress >> 0);
+
+    uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
+
+    //hfdcan2_TxHeader.DataLength = sizeof(message);
+    //static can_fesp_t TxData;         //8 byte data in union to be send
+
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+    {
+      /* Transmission request Error */
+      Error_Handler();
+    }
+
+    HAL_Delay(3);
+    CAN_XCP_CLEAR();
+
+    if (CAN_XCP_response() != XCP_PID_RES) {
+        //Error_Handler();
+        return;
+    }
+
+      //now the response was positive and we can send actual data we want
+
+    unsigned char message2[8] = {0};
+    memset(&message2, 0, sizeof(message2));
+
+    message2[0] = XCP_PID_CMD_DOWNLOAD;	//F0
+
+    if((byte_counter + 1) > 6)   message2[1] = 6;
+    else                         message2[1] = byte_counter + 1;
+
+    for(int i=0; i < message2[1];i++)
+    {
+    	message2[i+2] = outBuffer[byte_counter];
+        byte_counter--;
+    }
+
+    uint8_t * msg_send2 = message2;
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send2) != HAL_OK)
+    {
+    	/* Transmission request Error */
+        Error_Handler();
+    }
+
+    HAL_Delay(1);
+
+    //while (CAN_XCP_response() != XCP_PID_RES) {
+    //    HAL_Delay(1);
+    //}
+}
+
 
 
 //response for commands
@@ -399,7 +506,8 @@ int CAN_XCP_response()
     //get response
     //rework this return thingie
 	int i=0;
-    while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0)
+
+	while(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) == 0)
     {
     	i++;
     	HAL_Delay(1);
@@ -444,6 +552,19 @@ int CAN_XCP_response()
      }
      return 0;
 }
+
+void CAN_XCP_CLEAR(void)
+{
+    //this clears the possible remaining messages in fifo which can cause trouble
+    if(HAL_FDCAN_GetRxFifoFillLevel(&hfdcan2, FDCAN_RX_FIFO0) > 0) {
+        uint8_t * message = fdcanRxData;
+        if(HAL_FDCAN_GetRxMessage(&hfdcan2, FDCAN_RX_FIFO0, &hfdcan2_RxHeader, message) != HAL_OK) {
+            /* Reception Error */
+            Error_Handler();
+        }
+    }
+}
+
 /* USER CODE END 1 */
 
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -134,9 +134,9 @@ int main(void)
 	  memset(&PIDdata,0,sizeof(fpidData_t));
 	  //memset(&MPCdata,0,sizeof(mpcData_t));
 
-	  //V konƒçni verziji se to prebere iz eeproma,
-	  //da takoj nadaljujemo od koder smo konƒçali,
-	  //ƒçe se sluƒçajno pobiramo iz nenamernega reseta
+	  //V konƒ?ni verziji se to prebere iz eeproma,
+	  //da takoj nadaljujemo od koder smo konƒ?ali,
+	  //ƒ?e se sluƒ?ajno pobiramo iz nenamernega reseta
 	  Settings.current_mode=MODE_STOP;
 	  Settings.new_mode=MODE_DEFAULT;
     Settings.trigger_pressure=SETTINGS_DEFAULT_INSP_TRIGGER;
@@ -238,11 +238,13 @@ int main(void)
     HAL_ADC_Start_IT(&hadc4);
     MeasureInit();
     BUZZ_Off();
+    CAN_XCP_CLEAR();
+    HAL_Delay(500);
     motor_Init();
 #warning "izgleda, kot da so postavljene zastavice za prejeto sporocilo, ker takoj po aktivaciji IT skoci v prekinitev"
 
 #ifdef TESTING //zakomentiraj v CommonDefinitions.h
-    float test_trq = 0.09;
+    float test_trq = 0.0;
     //trq = 0.1;
     //uint8_t fdcanTxData[8]={0,0,0,0,0,0,0,0};
     //fdcanTxData[0] = 0xFF;
@@ -252,7 +254,8 @@ int main(void)
     	//write_trq();
     	//HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, fdcanTxData);
     	//uint32_t time1 = HAL_GetTick();
-    	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
+    	//motor_SetPower(0);
+    	//CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
     	/*uint32_t time2 = HAL_GetTick();
     	CAN_XCP_write(RequestedTorque, 0 , 4 , (char *)&test_trq );
     	uint32_t time3 = HAL_GetTick();
@@ -282,7 +285,7 @@ int main(void)
         DetectPowerStatus();
       }
 
-#warning "takt programa je nastavljen na 25 ms"
+#warning "takt programa je nastavljen na 10 ms"
 
       if (ADC_scan_complete())
       {
