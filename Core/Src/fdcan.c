@@ -282,7 +282,7 @@ void write_trq(void)
 }
 
 
-char CAN_XCP_INIT(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer)
+char CAN_XCP_INIT()
 {
 	fdcan_state = FDCAN_MOTOR_INIT;
 
@@ -297,15 +297,15 @@ char CAN_XCP_INIT(unsigned inAddress, unsigned char inExtension, unsigned inLeng
 
     HAL_Delay(500);
 
-    unsigned char message[8] = {0};
-	signed long byte_counter = inLength - 1;
-	//unsigned long byte_counter_old = 0;
+/// this part sends first trq request msg
 
-	CAN_XCP_CLEAR();
+    unsigned char message[8] = {0};
+    //unsigned char inExtension = 0;
+    unsigned inAddress = RequestedTorque;
 
 	memset(&message, 0, sizeof(message));
 	message[0] = XCP_PID_CMD_SET_MTA;		//F6
-	message[3] = inExtension;
+	message[3] = inExtension0;
 	message[4] = (unsigned char)(inAddress >> 24);
 	message[5] = (unsigned char)(inAddress >> 16);
 	message[6] = (unsigned char)(inAddress >> 8);
@@ -313,8 +313,7 @@ char CAN_XCP_INIT(unsigned inAddress, unsigned char inExtension, unsigned inLeng
 
 	uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
 
-	//hfdcan2_TxHeader.DataLength = sizeof(message);
-	//static can_fesp_t TxData;         //8 byte data in union to be send
+    CAN_XCP_CLEAR();
 
 	if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
 	{
@@ -327,7 +326,7 @@ char CAN_XCP_INIT(unsigned inAddress, unsigned char inExtension, unsigned inLeng
 
 	if (CAN_XCP_response() != XCP_PID_RES) {
 		//Error_Handler();
-		return;
+		return HAL_ERROR;
 	}
 
     fdcan_state = FDCAN_FREE;
@@ -432,43 +431,12 @@ void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLen
     //}
 }
 
-void CAN_XCP_write_trq(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer)
+void CAN_XCP_write_trq(char *outBuffer)
 {        //XCP write msg, address, extension 0 or 1, length? buffer?
 
-	unsigned char message[8] = {0};
-    signed long byte_counter = inLength - 1;
-    //unsigned long byte_counter_old = 0;
-
-    CAN_XCP_CLEAR();
-
-    memset(&message, 0, sizeof(message));
-    message[0] = XCP_PID_CMD_SET_MTA;		//F6
-    message[3] = inExtension;
-    message[4] = (unsigned char)(inAddress >> 24);
-    message[5] = (unsigned char)(inAddress >> 16);
-    message[6] = (unsigned char)(inAddress >> 8);
-    message[7] = (unsigned char)(inAddress >> 0);
-
-    uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
-
-    //hfdcan2_TxHeader.DataLength = sizeof(message);
-    //static can_fesp_t TxData;         //8 byte data in union to be send
-
-    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
-    {
-      /* Transmission request Error */
-      Error_Handler();
-    }
-
-    HAL_Delay(3);
-    CAN_XCP_CLEAR();
-
-    if (CAN_XCP_response() != XCP_PID_RES) {
-        //Error_Handler();
-        return;
-    }
-
       //now the response was positive and we can send actual data we want
+    unsigned inLength = 4;
+    signed long byte_counter = inLength - 1;
 
     unsigned char message2[8] = {0};
     memset(&message2, 0, sizeof(message2));
@@ -493,9 +461,42 @@ void CAN_XCP_write_trq(unsigned inAddress, unsigned char inExtension, unsigned i
 
     HAL_Delay(1);
 
-    //while (CAN_XCP_response() != XCP_PID_RES) {
-    //    HAL_Delay(1);
-    //}
+
+    //F6
+
+    unsigned char message[8] = {0};
+    unsigned inAddress = RequestedTorque;
+    //unsigned char inExtension = 0;
+
+    CAN_XCP_CLEAR();
+
+    memset(&message, 0, sizeof(message));
+    message[0] = XCP_PID_CMD_SET_MTA;       //F6
+    message[3] = inExtension0;               //0
+    message[4] = (unsigned char)(inAddress >> 24);
+    message[5] = (unsigned char)(inAddress >> 16);
+    message[6] = (unsigned char)(inAddress >> 8);
+    message[7] = (unsigned char)(inAddress >> 0);
+
+    uint8_t *msg_send = message;     //to reši vse nadaljne zadeve
+
+    //hfdcan2_TxHeader.DataLength = sizeof(message);
+    //static can_fesp_t TxData;         //8 byte data in union to be send
+
+    if (HAL_FDCAN_AddMessageToTxFifoQ(&hfdcan2, &hfdcan2_TxHeader, msg_send) != HAL_OK)
+    {
+      /* Transmission request Error */
+      Error_Handler();
+    }
+
+    HAL_Delay(3);
+    CAN_XCP_CLEAR();
+
+    if (CAN_XCP_response() != XCP_PID_RES) {
+        //Error_Handler();
+        return;
+    }
+
 }
 
 

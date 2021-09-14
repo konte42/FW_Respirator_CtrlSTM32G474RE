@@ -54,7 +54,7 @@ void MX_FDCAN2_Init(void);
 char CAN_XCP_INIT();
 void CAN_XCP_connect();
 void CAN_XCP_write(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer);
-void CAN_XCP_write_trq(unsigned inAddress, unsigned char inExtension, unsigned inLength, char *outBuffer);
+void CAN_XCP_write_trq(char *outBuffer);
 void write_trq(void);
 int CAN_XCP_response();
 void CAN_XCP_CLEAR(void);
